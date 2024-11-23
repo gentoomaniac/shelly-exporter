@@ -1,4 +1,4 @@
-package gotemplate
+package exporter
 
 import (
 	"github.com/rs/zerolog/log"

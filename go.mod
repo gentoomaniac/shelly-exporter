@@ -1,4 +1,4 @@
-module github.com/gentoomaniac/go-template
+module github.com/gentoomaniac/shelly-exporter
 
 go 1.22
 

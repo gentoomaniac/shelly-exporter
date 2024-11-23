@@ -3,7 +3,7 @@ before:
   hooks:
     - go mod download
 builds:
-  - main: ./cmd/go-template
+  - main: ./cmd/shelly-exporter
     id: "template-application"
     binary: "template-application"
     ldflags:
@@ -53,7 +53,7 @@ changelog:
 nfpms:
 - maintainer: Marco Siebecke <marco@siebecke.se>
   description: go template repo package
-  homepage: https://github.com/gentoomaniac/go-template
+  homepage: https://github.com/gentoomaniac/shelly-exporter
   license: MIT
   formats:
   - deb

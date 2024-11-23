@@ -2,9 +2,8 @@ package logging
 
 import (
 	"io"
-	"os"
-
 	"log"
+	"os"
 
 	"github.com/rs/zerolog"
 	zlog "github.com/rs/zerolog/log"
