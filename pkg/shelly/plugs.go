@@ -5,13 +5,17 @@ import (
 	"fmt"
 	"net"
 	"net/url"
+	"strconv"
+
+	"github.com/prometheus/client_golang/prometheus"
 )
 
-func NewPlugS(ip net.IP, user string, password string) PlugS {
+func NewPlugS(ip net.IP, user string, password string) *PlugS {
 	baseUrl, _ := url.Parse(fmt.Sprintf("http://%s/", ip.String()))
-	return PlugS{
-		baseUrl: baseUrl,
-		auth:    Auth{user: user, password: password},
+	return &PlugS{
+		baseUrl:    baseUrl,
+		auth:       Auth{user: user, password: password},
+		collectors: make(map[string]prometheus.Collector),
 	}
 }
 
@@ -19,7 +23,9 @@ type PlugS struct {
 	baseUrl *url.URL
 	auth    Auth
 
-	Status Status
+	status Status
+
+	collectors map[string]prometheus.Collector
 }
 
 type Status struct {
@@ -45,8 +51,14 @@ type Status struct {
 	Wifi              Wifi        `json:"wifi_sta"`
 }
 
-func (p *PlugS) Decode(rawResponse []byte) error {
-	err := json.Unmarshal(rawResponse, &p.Status)
+func (p *PlugS) Refresh() error {
+	statusUrl := p.baseUrl.JoinPath("status")
+	resp, err := request(statusUrl, &p.auth)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(resp, &p.status)
 	if err != nil {
 		return err
 	}
@@ -54,12 +66,22 @@ func (p *PlugS) Decode(rawResponse []byte) error {
 	return nil
 }
 
-func (p *PlugS) Update() error {
-	statusUrl := p.baseUrl.JoinPath("status")
-	resp, err := request(statusUrl, &p.auth)
-	if err != nil {
-		return err
-	}
+func (p *PlugS) Collectors() []prometheus.Collector {
+	p.collectors["shelly_power_total"] = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+		Namespace: "shelly",
+		Name:      "power_total",
+		Help:      "Total current consumed in Watt",
+		ConstLabels: prometheus.Labels{
+			"type":   "SHPLG_S",
+			"serial": strconv.Itoa(p.status.Serial),
+		},
+	},
+		func() float64 { return p.status.Meters[0].Power },
+	)
 
-	return p.Decode(resp)
+	var v []prometheus.Collector
+	for _, c := range p.collectors {
+		v = append(v, c)
+	}
+	return v
 }

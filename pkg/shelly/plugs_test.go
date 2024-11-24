@@ -1,7 +1,6 @@
 package shelly
 
 import (
-	"encoding/json"
 	"testing"
 )
 
@@ -15,7 +14,4 @@ func TestPlugSDecode(t *testing.T) {
 	if err != nil {
 		t.Errorf("Decoding failed: %s", err)
 	}
-
-	blob, _ := json.Marshal(p.Status)
-	t.Log(string(blob))
 }

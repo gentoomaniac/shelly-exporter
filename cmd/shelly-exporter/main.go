@@ -1,16 +1,15 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
-	"net"
+	"io"
+	"os"
 
 	"github.com/alecthomas/kong"
 	"github.com/rs/zerolog/log"
 
 	gocli "github.com/gentoomaniac/shelly-exporter/pkg/cli"
+	"github.com/gentoomaniac/shelly-exporter/pkg/exporter"
 	"github.com/gentoomaniac/shelly-exporter/pkg/logging"
-	"github.com/gentoomaniac/shelly-exporter/pkg/shelly"
 )
 
 var (
@@ -23,6 +22,8 @@ var (
 
 var cli struct {
 	logging.LoggingConfig
+
+	ConfigFile *os.File `help:"config file path" required:""`
 
 	Version gocli.VersionFlag `short:"V" help:"Display version."`
 }
@@ -37,14 +38,19 @@ func main() {
 	})
 	logging.Setup(&cli.LoggingConfig)
 
-	p := shelly.NewPlugS(net.ParseIP("10.1.3.117"), "", "")
-	err := p.Update()
+	defer cli.ConfigFile.Close()
+	b, err := io.ReadAll(cli.ConfigFile)
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Fatal().Msg("failed reading config")
 	}
 
-	blob, err := json.Marshal(p.Status)
-	fmt.Println(string(blob))
+	c, err := exporter.NewConfigFromContent(b)
+	if err != nil {
+		log.Fatal().Err(err).Msg("")
+	}
+
+	e := exporter.New(c)
+	e.Run()
 
 	ctx.Exit(0)
 }
