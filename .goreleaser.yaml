@@ -4,8 +4,8 @@ before:
     - go mod download
 builds:
   - main: ./cmd/shelly-exporter
-    id: "template-application"
-    binary: "template-application"
+    id: "shelly-exporter"
+    binary: "shelly-exporter"
     ldflags:
       - -s -w
       - -X 'main.version={{.Version}}'
@@ -26,12 +26,27 @@ archives:
   - id: bin
     format: binary
     builds:
-    - template-application
+    - shelly-exporter
     name_template: "{{ .Binary }}_{{ .Version }}_{{ .Os }}-{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}"
   - id: tar
     format: tar.gz
     builds:
-    - template-application
+    - shelly-exporter
+
+dockers:
+  - image_templates:
+      - "ghcr.io/gentoomaniac/shelly-exporter:{{ .Tag }}-amd64"
+    use: buildx
+    build_flag_templates:
+      - "--pull"
+      - "--platform=linux/amd64"
+  - image_templates:
+      - "ghcr.io/gentoomaniac/shelly-exporter:{{ .Tag }}-arm64"
+    use: buildx
+    build_flag_templates:
+      - "--pull"
+      - "--platform=linux/arm64"
+    goarch: arm64
 
 checksum:
   name_template: 'sha256sums.txt'
