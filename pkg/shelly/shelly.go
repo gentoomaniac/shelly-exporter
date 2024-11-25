@@ -13,11 +13,11 @@ type ActionStats struct {
 
 type Cloud struct {
 	Enabled   bool `json:"enabled"`
-	connected bool `json:"connected"`
+	Connected bool `json:"connected"`
 }
 
 type Meter struct {
-	Counters  [3]float64 `json:"counters`
+	Counters  [3]float64 `json:"counters"`
 	IsValid   bool       `json:"is_valid"`
 	Power     float64    `json:"power"`
 	OverPower float64    `json:"overpower"`
