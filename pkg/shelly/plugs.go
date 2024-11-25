@@ -67,11 +67,13 @@ func (p *PlugS) Refresh() error {
 }
 
 func (p *PlugS) Collectors() []prometheus.Collector {
+	bool2int := map[bool]int8{false: 0, true: 1}
 	constLabels := prometheus.Labels{
 		"type":   "SHPLG-S",
 		"serial": strconv.Itoa(p.status.Serial),
 	}
 
+	// Power
 	p.collectors = append(p.collectors, prometheus.NewGaugeFunc(prometheus.GaugeOpts{
 		Namespace:   "shelly",
 		Name:        "power_current",
@@ -90,6 +92,7 @@ func (p *PlugS) Collectors() []prometheus.Collector {
 		func() float64 { return float64(p.status.Meters[0].Total) },
 	))
 
+	// Temperatures
 	p.collectors = append(p.collectors, prometheus.NewGaugeFunc(prometheus.GaugeOpts{
 		Namespace:   "shelly",
 		Name:        "temperature_celsius",
@@ -106,6 +109,61 @@ func (p *PlugS) Collectors() []prometheus.Collector {
 		ConstLabels: constLabels,
 	},
 		func() float64 { return float64(p.status.Tmp.Fahrenheit) },
+	))
+
+	// System
+	p.collectors = append(p.collectors, prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+		Namespace:   "shelly",
+		Name:        "uptime",
+		Help:        "device uptime",
+		ConstLabels: constLabels,
+	},
+		func() float64 { return float64(p.status.Uptime) },
+	))
+
+	p.collectors = append(p.collectors, prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+		Namespace:   "shelly",
+		Name:        "memory_total",
+		Help:        "total device memory",
+		ConstLabels: constLabels,
+	},
+		func() float64 { return float64(p.status.RamTotal) },
+	))
+
+	p.collectors = append(p.collectors, prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+		Namespace:   "shelly",
+		Name:        "memory_free",
+		Help:        "free device memory",
+		ConstLabels: constLabels,
+	},
+		func() float64 { return float64(p.status.RamFree) },
+	))
+
+	p.collectors = append(p.collectors, prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+		Namespace:   "shelly",
+		Name:        "fs_total",
+		Help:        "total filesystem size",
+		ConstLabels: constLabels,
+	},
+		func() float64 { return float64(p.status.FsSize) },
+	))
+
+	p.collectors = append(p.collectors, prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+		Namespace:   "shelly",
+		Name:        "fs_free",
+		Help:        "free filesystem size",
+		ConstLabels: constLabels,
+	},
+		func() float64 { return float64(p.status.FsFree) },
+	))
+
+	p.collectors = append(p.collectors, prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+		Namespace:   "shelly",
+		Name:        "has_update",
+		Help:        "device update available",
+		ConstLabels: constLabels,
+	},
+		func() float64 { return float64(bool2int[p.status.HasUpdate]) },
 	))
 
 	return p.collectors
