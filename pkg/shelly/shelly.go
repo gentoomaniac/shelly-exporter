@@ -40,9 +40,9 @@ type Relay struct {
 }
 
 type Temperature struct {
-	Celsius   float32 `json:"tC"`
-	Fahrnheit float32 `json:"tF"`
-	IsValid   bool    `json:"is_valid"`
+	Celsius    float32 `json:"tC"`
+	Fahrenheit float32 `json:"tF"`
+	IsValid    bool    `json:"is_valid"`
 }
 
 type Update struct {

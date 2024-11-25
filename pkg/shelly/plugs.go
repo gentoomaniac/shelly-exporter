@@ -13,9 +13,8 @@ import (
 func NewPlugS(ip net.IP, user string, password string) *PlugS {
 	baseUrl, _ := url.Parse(fmt.Sprintf("http://%s/", ip.String()))
 	return &PlugS{
-		baseUrl:    baseUrl,
-		auth:       Auth{user: user, password: password},
-		collectors: make(map[string]prometheus.Collector),
+		baseUrl: baseUrl,
+		auth:    Auth{user: user, password: password},
 	}
 }
 
@@ -25,7 +24,7 @@ type PlugS struct {
 
 	status Status
 
-	collectors map[string]prometheus.Collector
+	collectors []prometheus.Collector
 }
 
 type Status struct {
@@ -44,6 +43,7 @@ type Status struct {
 	Relays            []Relay     `json:"relays"`
 	Serial            int         `json:"serial"`
 	Temperature       float32     `json:"temperature"`
+	Tmp               Temperature `json:"tmp"`
 	Time              string      `json:"time"`
 	Unixtime          int         `json:"unixtime"`
 	Update            Update      `json:"update"`
@@ -67,21 +67,46 @@ func (p *PlugS) Refresh() error {
 }
 
 func (p *PlugS) Collectors() []prometheus.Collector {
-	p.collectors["shelly_power_total"] = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-		Namespace: "shelly",
-		Name:      "power_total",
-		Help:      "Total current consumed in Watt",
-		ConstLabels: prometheus.Labels{
-			"type":   "SHPLG_S",
-			"serial": strconv.Itoa(p.status.Serial),
-		},
+	constLabels := prometheus.Labels{
+		"type":   "SHPLG-S",
+		"serial": strconv.Itoa(p.status.Serial),
+	}
+
+	p.collectors = append(p.collectors, prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+		Namespace:   "shelly",
+		Name:        "power_current",
+		Help:        "Current real AC power being drawn, in Watts",
+		ConstLabels: constLabels,
 	},
 		func() float64 { return p.status.Meters[0].Power },
-	)
+	))
 
-	var v []prometheus.Collector
-	for _, c := range p.collectors {
-		v = append(v, c)
-	}
-	return v
+	p.collectors = append(p.collectors, prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+		Namespace:   "shelly",
+		Name:        "power_total",
+		Help:        "Total energy consumed by the attached electrical appliance in Watt-minute",
+		ConstLabels: constLabels,
+	},
+		func() float64 { return float64(p.status.Meters[0].Total) },
+	))
+
+	p.collectors = append(p.collectors, prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+		Namespace:   "shelly",
+		Name:        "temperature_celsius",
+		Help:        "internal device temperature in °C",
+		ConstLabels: constLabels,
+	},
+		func() float64 { return float64(p.status.Tmp.Celsius) },
+	))
+
+	p.collectors = append(p.collectors, prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+		Namespace:   "shelly",
+		Name:        "temperature_fahrenheit",
+		Help:        "internal device temperature in °F",
+		ConstLabels: constLabels,
+	},
+		func() float64 { return float64(p.status.Tmp.Fahrenheit) },
+	))
+
+	return p.collectors
 }
