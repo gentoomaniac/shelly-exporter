@@ -53,10 +53,18 @@ func (e *Exporter) Run() {
 func (e *Exporter) setupDevices() {
 	for _, dev := range e.config.Devices {
 		var shellyDev ShellyDevice
+		user := e.config.Global.User
+		if dev.User != "" {
+			user = dev.User
+		}
+		password := e.config.Global.Password
+		if dev.Password != "" {
+			password = dev.Password
+		}
 
 		switch dev.Type {
 		case SHPLG_S:
-			shellyDev = shelly.NewPlugS(dev.Ip, dev.User, dev.Password)
+			shellyDev = shelly.NewPlugS(dev.Ip, string(user), string(password))
 		}
 
 		e.devices = append(e.devices, shellyDev)

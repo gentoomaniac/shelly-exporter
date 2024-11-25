@@ -4,7 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"os"
+	"regexp"
 
+	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v2"
 )
 
@@ -43,17 +46,62 @@ func (t *Type) MarshalYAML() (interface{}, error) {
 	return TypeString[*t], nil
 }
 
+func getEnv(name string, defaultValue string) string {
+	value, ok := os.LookupEnv(name)
+	if !ok {
+		return defaultValue
+	}
+
+	return value
+}
+
+type EnvString string
+
+func (e *EnvString) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	var str string
+	err := unmarshal(&str)
+	if err != nil {
+		return err
+	}
+
+	r := regexp.MustCompile(`\${env:(?P<Env>[a-zA-Z0-9-_]+)(:-(?P<Default>.+))?}`)
+	matches := r.FindStringSubmatch(str)
+	if len(matches) > 0 {
+		envName := matches[1]
+		defaultValue := ""
+		if len(matches) == 4 {
+			defaultValue = matches[3]
+		}
+		log.Debug().Str("envName", envName).Str("default", defaultValue).Msg("")
+
+		*e = EnvString(getEnv(envName, defaultValue))
+	} else {
+		*e = EnvString(str)
+	}
+
+	//	return errors.New(fmt.Sprintf("invalid type: %s", typeString))
+
+	return nil
+}
+
 type Device struct {
-	Name      string `yaml:"name"`
-	Alias     string `yaml:"alias"`
-	Type      Type   `yaml:"type"`
-	Ip        net.IP `yaml:"ip"`
-	User      string `yaml:"user"`
-	Password  string `yaml:"password"`
-	Frequency string `yaml:"frequency"`
+	Name      string    `yaml:"name"`
+	Alias     string    `yaml:"alias"`
+	Type      Type      `yaml:"type"`
+	Ip        net.IP    `yaml:"ip"`
+	User      EnvString `yaml:"user"`
+	Password  EnvString `yaml:"password"`
+	Frequency EnvString `yaml:"frequency"`
+}
+
+type Global struct {
+	User      EnvString `yaml:"user"`
+	Password  EnvString `yaml:"password"`
+	Frequency EnvString `yaml:"frequency"`
 }
 
 type Config struct {
+	Global  Global   `yaml:"global"`
 	Devices []Device `yaml:"devices"`
 }
 
