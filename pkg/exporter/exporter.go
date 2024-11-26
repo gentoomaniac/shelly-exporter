@@ -70,6 +70,8 @@ func (e *Exporter) setupDevices() {
 			password = dev.Password
 		}
 
+		dev.Labels["ip"] = dev.Ip.String()
+
 		switch dev.Type {
 		case SHPLG_S:
 			shellyDev = shelly.NewPlugS(dev.Ip, string(user), string(password), dev.Labels)
