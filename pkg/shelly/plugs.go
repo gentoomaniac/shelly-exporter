@@ -10,17 +10,19 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-func NewPlugS(ip net.IP, user string, password string) *PlugS {
+func NewPlugS(ip net.IP, user string, password string, labels prometheus.Labels) *PlugS {
 	baseUrl, _ := url.Parse(fmt.Sprintf("http://%s/", ip.String()))
 	return &PlugS{
 		baseUrl: baseUrl,
 		auth:    Auth{user: user, password: password},
+		labels:  labels,
 	}
 }
 
 type PlugS struct {
 	baseUrl *url.URL
 	auth    Auth
+	labels  prometheus.Labels
 
 	settings Settings
 	status   Status
@@ -99,6 +101,10 @@ func (p *PlugS) Collectors() ([]prometheus.Collector, error) {
 		"serial":   strconv.Itoa(p.status.Serial),
 		"name":     p.settings.Name,
 		"hostname": p.settings.Device.Hostname,
+	}
+
+	for k, v := range p.labels {
+		constLabels[k] = v
 	}
 
 	// Power

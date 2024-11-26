@@ -85,11 +85,12 @@ func (e *EnvString) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 type Device struct {
-	Type      Type      `yaml:"type"`
-	Ip        net.IP    `yaml:"ip"`
-	User      EnvString `yaml:"user"`
-	Password  EnvString `yaml:"password"`
-	Frequency EnvString `yaml:"frequency"`
+	Type      Type              `yaml:"type"`
+	Ip        net.IP            `yaml:"ip"`
+	User      EnvString         `yaml:"user"`
+	Password  EnvString         `yaml:"password"`
+	Frequency EnvString         `yaml:"frequency"`
+	Labels    map[string]string `yaml:"labels"`
 }
 
 type Global struct {
