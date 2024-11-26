@@ -36,6 +36,7 @@ archives:
 dockers:
   - image_templates:
       - "ghcr.io/gentoomaniac/shelly-exporter:{{ .Tag }}-amd64"
+      - "ghcr.io/gentoomaniac/shelly-exporter:latest"
     use: buildx
     build_flag_templates:
       - "--pull"
