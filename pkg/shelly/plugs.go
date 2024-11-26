@@ -52,6 +52,10 @@ type Status struct {
 	Wifi              Wifi        `json:"wifi_sta"`
 }
 
+func (p PlugS) Name() string {
+	return p.settings.Device.Hostname
+}
+
 func (p *PlugS) refreshSettings() error {
 	settingsUrl := p.baseUrl.JoinPath("settings")
 	resp, err := request(settingsUrl, &p.auth)

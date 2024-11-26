@@ -13,6 +13,7 @@ import (
 )
 
 type ShellyDevice interface {
+	Name() string
 	Refresh() error
 	Collectors() ([]prometheus.Collector, error)
 }
@@ -75,7 +76,7 @@ func (e *Exporter) setupDevices() {
 		e.devices = append(e.devices, shellyDev)
 		err := shellyDev.Refresh()
 		if err != nil {
-			log.Error().Err(err).Str("device", dev.Name).Msg("refresh failed")
+			log.Error().Err(err).Str("device", shellyDev.Name()).Msg("refresh failed")
 		}
 	}
 }

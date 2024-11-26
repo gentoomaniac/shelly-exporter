@@ -85,8 +85,6 @@ func (e *EnvString) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 type Device struct {
-	Name      string    `yaml:"name"`
-	Alias     string    `yaml:"alias"`
 	Type      Type      `yaml:"type"`
 	Ip        net.IP    `yaml:"ip"`
 	User      EnvString `yaml:"user"`
