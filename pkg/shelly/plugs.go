@@ -22,7 +22,8 @@ type PlugS struct {
 	baseUrl *url.URL
 	auth    Auth
 
-	status Status
+	settings Settings
+	status   Status
 
 	collectors []prometheus.Collector
 }
@@ -51,6 +52,21 @@ type Status struct {
 	Wifi              Wifi        `json:"wifi_sta"`
 }
 
+func (p *PlugS) refreshSettings() error {
+	settingsUrl := p.baseUrl.JoinPath("settings")
+	resp, err := request(settingsUrl, &p.auth)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(resp, &p.settings)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (p *PlugS) Refresh() error {
 	statusUrl := p.baseUrl.JoinPath("status")
 	resp, err := request(statusUrl, &p.auth)
@@ -66,11 +82,19 @@ func (p *PlugS) Refresh() error {
 	return nil
 }
 
-func (p *PlugS) Collectors() []prometheus.Collector {
+func (p *PlugS) Collectors() ([]prometheus.Collector, error) {
 	bool2int := map[bool]int8{false: 0, true: 1}
+
+	err := p.refreshSettings()
+	if err != nil {
+		return []prometheus.Collector{}, err
+	}
+
 	constLabels := prometheus.Labels{
-		"type":   "SHPLG-S",
-		"serial": strconv.Itoa(p.status.Serial),
+		"type":     "SHPLG-S",
+		"serial":   strconv.Itoa(p.status.Serial),
+		"name":     p.settings.Name,
+		"hostname": p.settings.Device.Hostname,
 	}
 
 	// Power
@@ -166,5 +190,5 @@ func (p *PlugS) Collectors() []prometheus.Collector {
 		func() float64 { return float64(bool2int[p.status.HasUpdate]) },
 	))
 
-	return p.collectors
+	return p.collectors, nil
 }

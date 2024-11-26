@@ -14,7 +14,7 @@ import (
 
 type ShellyDevice interface {
 	Refresh() error
-	Collectors() []prometheus.Collector
+	Collectors() ([]prometheus.Collector, error)
 }
 
 type Exporter struct {
@@ -40,7 +40,12 @@ func (e *Exporter) Run() {
 	e.setupDevices()
 
 	for _, dev := range e.devices {
-		prometheus.MustRegister(dev.Collectors()...)
+		collectors, err := dev.Collectors()
+		if err != nil {
+			log.Error().Err(err).Msg("failed registering collectors")
+		}
+
+		prometheus.MustRegister(collectors...)
 		go updateDevice(dev)
 	}
 
