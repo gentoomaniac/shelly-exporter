@@ -15,6 +15,13 @@ import (
 	"github.com/gentoomaniac/shelly-exporter/pkg/shelly"
 )
 
+var webhookCounter = prometheus.NewCounter(prometheus.CounterOpts{
+	Namespace: "shellyexporter",
+	Name:      "webhook_calls",
+	Help:      "Number calls to the webhook",
+},
+)
+
 type ShellyDevice interface {
 	Name() string
 	Refresh() error
@@ -57,6 +64,7 @@ func (e *Exporter) Run() {
 		prometheus.MustRegister(collectors...)
 		go updateDevice(dev)
 	}
+	prometheus.MustRegister(webhookCounter)
 
 	// Start HTTP server
 	log.Info().Msg("Starting server on port 8080")
@@ -66,6 +74,8 @@ func (e *Exporter) Run() {
 }
 
 func (e *Exporter) webhookHandler(w http.ResponseWriter, r *http.Request) {
+	webhookCounter.Inc()
+
 	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Error().Err(err).Msg("failed reading body")
