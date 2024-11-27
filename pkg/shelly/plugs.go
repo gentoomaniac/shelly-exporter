@@ -120,7 +120,7 @@ func (p *PlugS) Collectors() ([]prometheus.Collector, error) {
 		Help:        "Current real AC power being drawn, in Watts",
 		ConstLabels: constLabels,
 	},
-		func() float64 { return float64(p.status.Tmp.Celsius) },
+		func() float64 { return float64(p.status.Meters[0].Power) },
 	)
 
 	p.collectors["power_total"] = prometheus.NewHistogram(prometheus.HistogramOpts{
