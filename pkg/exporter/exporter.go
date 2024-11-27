@@ -1,6 +1,7 @@
 package exporter
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -30,15 +31,20 @@ func New(c *Config) *Exporter {
 }
 
 func updateDevice(s ShellyDevice) {
-	for true {
-		s.Refresh()
-		log.Debug().Str("device", "").Msg("updated device")
+	for {
+		err := s.Refresh()
+		if err != nil {
+			log.Error().Err(err).Str("device", s.Name()).Msg("refresh failed")
+		}
+		log.Debug().Str("device", s.Name()).Msg("refreshed")
 		time.Sleep(5 * time.Second)
 	}
 }
 
 func (e *Exporter) Run() {
-	e.setupDevices()
+	if err := e.setupDevices(); err != nil {
+		log.Fatal().Err(err).Msg("")
+	}
 
 	for _, dev := range e.devices {
 		collectors, err := dev.Collectors()
@@ -56,7 +62,7 @@ func (e *Exporter) Run() {
 	http.ListenAndServe(":8080", nil)
 }
 
-func (e *Exporter) setupDevices() {
+func (e *Exporter) setupDevices() (err error) {
 	for _, dev := range e.config.Devices {
 		var shellyDev ShellyDevice
 
@@ -74,13 +80,15 @@ func (e *Exporter) setupDevices() {
 
 		switch dev.Type {
 		case SHPLG_S:
-			shellyDev = shelly.NewPlugS(dev.Ip, string(user), string(password), dev.Labels)
+			shellyDev, err = shelly.NewPlugS(dev.Ip, string(user), string(password), dev.Labels)
+		}
+
+		if err != nil {
+			return fmt.Errorf("failed creating device for ip %s: %w", dev.Ip, err)
 		}
 
 		e.devices = append(e.devices, shellyDev)
-		err := shellyDev.Refresh()
-		if err != nil {
-			log.Error().Err(err).Str("device", shellyDev.Name()).Msg("refresh failed")
-		}
 	}
+
+	return nil
 }

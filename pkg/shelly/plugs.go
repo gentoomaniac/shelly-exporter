@@ -10,13 +10,22 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-func NewPlugS(ip net.IP, user string, password string, labels prometheus.Labels) *PlugS {
+func NewPlugS(ip net.IP, user string, password string, labels prometheus.Labels) (*PlugS, error) {
 	baseUrl, _ := url.Parse(fmt.Sprintf("http://%s/", ip.String()))
-	return &PlugS{
-		baseUrl: baseUrl,
-		auth:    Auth{user: user, password: password},
-		labels:  labels,
+
+	p := &PlugS{
+		baseUrl:    baseUrl,
+		auth:       Auth{user: user, password: password},
+		labels:     labels,
+		collectors: make(map[string]prometheus.Collector),
 	}
+
+	err := p.refreshSettings()
+	if err != nil {
+		return nil, err
+	}
+
+	return p, nil
 }
 
 type PlugS struct {
@@ -27,7 +36,7 @@ type PlugS struct {
 	settings Settings
 	status   Status
 
-	collectors []prometheus.Collector
+	collectors map[string]prometheus.Collector
 }
 
 type Status struct {
@@ -85,16 +94,13 @@ func (p *PlugS) Refresh() error {
 		return err
 	}
 
+	p.collectors["power_total"].(prometheus.Histogram).Observe(float64(p.status.Meters[0].Total))
+
 	return nil
 }
 
 func (p *PlugS) Collectors() ([]prometheus.Collector, error) {
 	bool2int := map[bool]int8{false: 0, true: 1}
-
-	err := p.refreshSettings()
-	if err != nil {
-		return []prometheus.Collector{}, err
-	}
 
 	constLabels := prometheus.Labels{
 		"type":     "SHPLG-S",
@@ -108,97 +114,101 @@ func (p *PlugS) Collectors() ([]prometheus.Collector, error) {
 	}
 
 	// Power
-	p.collectors = append(p.collectors, prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+	p.collectors["power_current"] = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
 		Namespace:   "shelly",
 		Name:        "power_current",
 		Help:        "Current real AC power being drawn, in Watts",
 		ConstLabels: constLabels,
 	},
-		func() float64 { return p.status.Meters[0].Power },
-	))
+		func() float64 { return float64(p.status.Tmp.Celsius) },
+	)
 
-	p.collectors = append(p.collectors, prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+	p.collectors["power_total"] = prometheus.NewHistogram(prometheus.HistogramOpts{
 		Namespace:   "shelly",
 		Name:        "power_total",
 		Help:        "Total energy consumed by the attached electrical appliance in Watt-minute",
 		ConstLabels: constLabels,
 	},
-		func() float64 { return float64(p.status.Meters[0].Total) },
-	))
+	)
 
 	// Temperatures
-	p.collectors = append(p.collectors, prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+	p.collectors["temperature_celsius"] = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
 		Namespace:   "shelly",
 		Name:        "temperature_celsius",
 		Help:        "internal device temperature in °C",
 		ConstLabels: constLabels,
 	},
 		func() float64 { return float64(p.status.Tmp.Celsius) },
-	))
+	)
 
-	p.collectors = append(p.collectors, prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+	p.collectors["temperature_fahrenheit"] = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
 		Namespace:   "shelly",
 		Name:        "temperature_fahrenheit",
 		Help:        "internal device temperature in °F",
 		ConstLabels: constLabels,
 	},
 		func() float64 { return float64(p.status.Tmp.Fahrenheit) },
-	))
+	)
 
 	// System
-	p.collectors = append(p.collectors, prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+	p.collectors["uptime"] = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
 		Namespace:   "shelly",
 		Name:        "uptime",
 		Help:        "device uptime",
 		ConstLabels: constLabels,
 	},
 		func() float64 { return float64(p.status.Uptime) },
-	))
+	)
 
-	p.collectors = append(p.collectors, prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+	p.collectors["memory_total"] = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
 		Namespace:   "shelly",
 		Name:        "memory_total",
 		Help:        "total device memory",
 		ConstLabels: constLabels,
 	},
 		func() float64 { return float64(p.status.RamTotal) },
-	))
+	)
 
-	p.collectors = append(p.collectors, prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+	p.collectors["memory_free"] = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
 		Namespace:   "shelly",
 		Name:        "memory_free",
 		Help:        "free device memory",
 		ConstLabels: constLabels,
 	},
 		func() float64 { return float64(p.status.RamFree) },
-	))
+	)
 
-	p.collectors = append(p.collectors, prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+	p.collectors["fs_total"] = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
 		Namespace:   "shelly",
 		Name:        "fs_total",
 		Help:        "total filesystem size",
 		ConstLabels: constLabels,
 	},
 		func() float64 { return float64(p.status.FsSize) },
-	))
+	)
 
-	p.collectors = append(p.collectors, prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+	p.collectors["fs_free"] = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
 		Namespace:   "shelly",
 		Name:        "fs_free",
 		Help:        "free filesystem size",
 		ConstLabels: constLabels,
 	},
 		func() float64 { return float64(p.status.FsFree) },
-	))
+	)
 
-	p.collectors = append(p.collectors, prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+	p.collectors["has_update"] = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
 		Namespace:   "shelly",
 		Name:        "has_update",
 		Help:        "device update available",
 		ConstLabels: constLabels,
 	},
 		func() float64 { return float64(bool2int[p.status.HasUpdate]) },
-	))
+	)
 
-	return p.collectors, nil
+	var c []prometheus.Collector
+	for _, v := range p.collectors {
+		c = append(c, v)
+	}
+
+	return c, nil
 }
