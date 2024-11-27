@@ -1,7 +1,9 @@
 package exporter
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 
@@ -59,7 +61,23 @@ func (e *Exporter) Run() {
 	// Start HTTP server
 	log.Info().Msg("Starting server on port 8080")
 	http.Handle("/metrics", promhttp.Handler())
+	http.HandleFunc("/webhook", e.webhookHandler)
 	http.ListenAndServe(":8080", nil)
+}
+
+func (e *Exporter) webhookHandler(w http.ResponseWriter, r *http.Request) {
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		log.Error().Err(err).Msg("failed reading body")
+	}
+
+	var body interface{}
+	err = json.Unmarshal(bodyBytes, &body)
+	if err != nil {
+		log.Info().Str("remoteAddr", r.RemoteAddr).Str("uri", r.RequestURI).Any("headers", r.Header).Str("body", string(bodyBytes)).Msg("")
+	} else {
+		log.Info().Str("remoteAddr", r.RemoteAddr).Str("uri", r.RequestURI).Any("headers", r.Header).Any("body", body).Msg("")
+	}
 }
 
 func (e *Exporter) setupDevices() (err error) {
