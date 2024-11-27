@@ -94,8 +94,6 @@ func (p *PlugS) Refresh() error {
 		return err
 	}
 
-	p.collectors["power_total"].(prometheus.Histogram).Observe(float64(p.status.Meters[0].Total))
-
 	return nil
 }
 
@@ -123,12 +121,13 @@ func (p *PlugS) Collectors() ([]prometheus.Collector, error) {
 		func() float64 { return float64(p.status.Meters[0].Power) },
 	)
 
-	p.collectors["power_total"] = prometheus.NewHistogram(prometheus.HistogramOpts{
+	p.collectors["power_total"] = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
 		Namespace:   "shelly",
 		Name:        "power_total",
 		Help:        "Total energy consumed by the attached electrical appliance in Watt-minute",
 		ConstLabels: constLabels,
 	},
+		func() float64 { return float64(p.status.Meters[0].Total) },
 	)
 
 	// Temperatures
