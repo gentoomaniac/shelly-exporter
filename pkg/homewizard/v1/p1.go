@@ -98,13 +98,47 @@ func (h *Homewizard) Collectors() ([]prometheus.Collector, error) {
 	},
 		func() float64 { return h.data.ActivePowerW },
 	)
+	h.collectors["active_power_l1_w"] = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+		Namespace:   "homewizard",
+		Name:        "active_power_l1_w",
+		Help:        "Current real AC power being drawn on L1, in Watts",
+		ConstLabels: constLabels,
+	},
+		func() float64 { return h.data.ActivePowerL1W },
+	)
+	h.collectors["active_power_l2_w"] = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+		Namespace:   "homewizard",
+		Name:        "active_power_l2_w",
+		Help:        "Current real AC power being drawn on L2, in Watts",
+		ConstLabels: constLabels,
+	},
+		func() float64 { return h.data.ActivePowerL1W },
+	)
+	h.collectors["active_power_l3_w"] = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+		Namespace:   "homewizard",
+		Name:        "active_power_l3_w",
+		Help:        "Current real AC power being drawn on L3, in Watts",
+		ConstLabels: constLabels,
+	},
+		func() float64 { return h.data.ActivePowerL1W },
+	)
+
 	h.collectors["total_power_import_kwh"] = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
 		Namespace:   "homewizard",
 		Name:        "total_power_import_kwh",
 		Help:        "Total imported power in kWh",
 		ConstLabels: constLabels,
 	},
-		func() float64 { return h.data.ActivePowerW },
+		func() float64 { return h.data.TotalPowerImportKwh },
+	)
+
+	h.collectors["total_power_exportt_kwh"] = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+		Namespace:   "homewizard",
+		Name:        "total_power_export_kwh",
+		Help:        "Total exported power in kWh",
+		ConstLabels: constLabels,
+	},
+		func() float64 { return h.data.TotalPowerExportKwh },
 	)
 
 	var c []prometheus.Collector

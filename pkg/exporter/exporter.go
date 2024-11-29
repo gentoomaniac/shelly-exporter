@@ -107,6 +107,9 @@ func (e *Exporter) setupDevices() (err error) {
 			password = dev.Password
 		}
 
+		if dev.Labels == nil {
+			dev.Labels = make(map[string]string)
+		}
 		dev.Labels["ip"] = dev.IP.String()
 
 		switch dev.Type {
