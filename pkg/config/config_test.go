@@ -1,4 +1,4 @@
-package exporter
+package config
 
 import (
 	"testing"

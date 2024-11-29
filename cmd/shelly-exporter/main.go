@@ -8,6 +8,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	gocli "github.com/gentoomaniac/shelly-exporter/pkg/cli"
+	"github.com/gentoomaniac/shelly-exporter/pkg/config"
 	"github.com/gentoomaniac/shelly-exporter/pkg/exporter"
 	"github.com/gentoomaniac/shelly-exporter/pkg/logging"
 )
@@ -44,7 +45,7 @@ func main() {
 		log.Fatal().Msg("failed reading config")
 	}
 
-	c, err := exporter.NewConfigFromContent(b)
+	c, err := config.NewConfigFromContent(b)
 	if err != nil {
 		log.Fatal().Err(err).Msg("")
 	}

@@ -12,7 +12,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
-	"github.com/gentoomaniac/shelly-exporter/pkg/shelly"
+	"github.com/gentoomaniac/shelly-exporter/pkg/config"
+	homewizard_v1 "github.com/gentoomaniac/shelly-exporter/pkg/homewizard/v1"
+	plugs "github.com/gentoomaniac/shelly-exporter/pkg/shelly/plugs"
 )
 
 var webhookCounter = prometheus.NewCounter(prometheus.CounterOpts{
@@ -22,24 +24,25 @@ var webhookCounter = prometheus.NewCounter(prometheus.CounterOpts{
 },
 )
 
-type ShellyDevice interface {
+type Device interface {
+	Collectors() ([]prometheus.Collector, error)
 	Name() string
 	Refresh() error
-	Collectors() ([]prometheus.Collector, error)
+	RefreshDeviceinfo() error
 }
 
 type Exporter struct {
-	config  *Config
-	devices []ShellyDevice
+	config  *config.Config
+	devices []Device
 }
 
-func New(c *Config) *Exporter {
+func New(c *config.Config) *Exporter {
 	return &Exporter{
 		config: c,
 	}
 }
 
-func updateDevice(s ShellyDevice) {
+func updateDevice(s Device) {
 	for {
 		err := s.Refresh()
 		if err != nil {
@@ -92,7 +95,7 @@ func (e *Exporter) webhookHandler(w http.ResponseWriter, r *http.Request) {
 
 func (e *Exporter) setupDevices() (err error) {
 	for _, dev := range e.config.Devices {
-		var shellyDev ShellyDevice
+		var exporterDev Device
 
 		user := e.config.Global.User
 		if dev.User != "" {
@@ -104,18 +107,26 @@ func (e *Exporter) setupDevices() (err error) {
 			password = dev.Password
 		}
 
-		dev.Labels["ip"] = dev.Ip.String()
+		dev.Labels["ip"] = dev.IP.String()
 
 		switch dev.Type {
-		case SHPLG_S:
-			shellyDev, err = shelly.NewPlugS(dev.Ip, string(user), string(password), dev.Labels)
+		case config.SHPLG_S:
+			exporterDev, err = plugs.NewPlugS(dev.IP, string(user), string(password), dev.Labels)
+
+		case config.HWE_P1:
+			exporterDev, err = homewizard_v1.NewP1(
+				homewizard_v1.Config{IP: dev.IP, Labels: dev.Labels},
+			)
+
+		default:
+			return fmt.Errorf("unknown device: %s", dev.Type)
 		}
 
 		if err != nil {
-			return fmt.Errorf("failed creating device for ip %s: %w", dev.Ip, err)
+			return fmt.Errorf("failed creating device for ip %s: %w", dev.IP, err)
 		}
 
-		e.devices = append(e.devices, shellyDev)
+		e.devices = append(e.devices, exporterDev)
 	}
 
 	return nil

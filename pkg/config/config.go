@@ -1,30 +1,38 @@
-package exporter
+package config
 
 import (
-	"errors"
 	"fmt"
 	"net"
 	"os"
 	"regexp"
 
+	homewizard_v1 "github.com/gentoomaniac/shelly-exporter/pkg/homewizard/v1"
+	shelly_plugs "github.com/gentoomaniac/shelly-exporter/pkg/shelly/plugs"
 	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v2"
 )
 
 const (
 	SHPLG_S Type = iota
+	HWE_P1
 )
 
 type Type uint8
 
 var (
-	TypeString = map[Type]string{
-		SHPLG_S: "SHPLG-S",
+	typeString = map[Type]string{
+		SHPLG_S: shelly_plugs.TypeString,
+		HWE_P1:  homewizard_v1.TypeString,
 	}
-	StringType = map[string]Type{
+	stringType = map[string]Type{
 		"SHPLG-S": SHPLG_S,
+		"HWE-P1":  HWE_P1,
 	}
 )
+
+func (t Type) String() string {
+	return typeString[t]
+}
 
 func (t *Type) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var typeString string
@@ -34,16 +42,16 @@ func (t *Type) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	}
 
 	var ok bool
-	*t, ok = StringType[typeString]
+	*t, ok = stringType[typeString]
 	if !ok {
-		return errors.New(fmt.Sprintf("invalid type: %s", typeString))
+		return fmt.Errorf("invalid type: %s", typeString)
 	}
 
 	return nil
 }
 
 func (t *Type) MarshalYAML() (interface{}, error) {
-	return TypeString[*t], nil
+	return t.String(), nil
 }
 
 func getEnv(name string, defaultValue string) string {
@@ -86,7 +94,7 @@ func (e *EnvString) UnmarshalYAML(unmarshal func(interface{}) error) error {
 
 type Device struct {
 	Type      Type              `yaml:"type"`
-	Ip        net.IP            `yaml:"ip"`
+	IP        net.IP            `yaml:"ip"`
 	User      EnvString         `yaml:"user"`
 	Password  EnvString         `yaml:"password"`
 	Frequency EnvString         `yaml:"frequency"`
@@ -109,7 +117,7 @@ func NewConfigFromContent(filecontent []byte) (*Config, error) {
 
 	err := yaml.Unmarshal(filecontent, c)
 	if err != nil {
-		return nil, fmt.Errorf("Unmarshaling config failed: %w", err)
+		return nil, fmt.Errorf("unmarshaling config failed: %w", err)
 	}
 
 	return c, nil

@@ -8,19 +8,23 @@ import (
 	"strconv"
 
 	"github.com/prometheus/client_golang/prometheus"
+
+	"github.com/gentoomaniac/shelly-exporter/pkg/shelly"
 )
+
+const TypeString = "SHPLG-S"
 
 func NewPlugS(ip net.IP, user string, password string, labels prometheus.Labels) (*PlugS, error) {
 	baseUrl, _ := url.Parse(fmt.Sprintf("http://%s/", ip.String()))
 
 	p := &PlugS{
 		baseUrl:    baseUrl,
-		auth:       Auth{user: user, password: password},
+		auth:       shelly.Auth{User: user, Password: password},
 		labels:     labels,
 		collectors: make(map[string]prometheus.Collector),
 	}
 
-	err := p.refreshSettings()
+	err := p.RefreshDeviceinfo()
 	if err != nil {
 		return nil, err
 	}
@@ -30,46 +34,46 @@ func NewPlugS(ip net.IP, user string, password string, labels prometheus.Labels)
 
 type PlugS struct {
 	baseUrl *url.URL
-	auth    Auth
+	auth    shelly.Auth
 	labels  prometheus.Labels
 
-	settings Settings
+	settings shelly.Settings
 	status   Status
 
 	collectors map[string]prometheus.Collector
 }
 
 type Status struct {
-	ActionStats       ActionStats `json:"action_stats"`
-	ConfigChangeCount int         `json:"cfg_change_count"`
-	Cloud             Cloud       `json:"cloud"`
-	FsFree            int         `json:"fs_free"`
-	FsSize            int         `json:"fs_size"`
-	HasUpdate         bool        `json:"has_update"`
-	Mac               string      `json:"mac"`
-	Meters            []Meter     `json:"meters"`
-	Mqtt              Mqtt        `json:"mqtt"`
-	OverTemperature   bool        `json:"overtemperature"`
-	RamFree           int         `json:"ram_free"`
-	RamTotal          int         `json:"ram_total"`
-	Relays            []Relay     `json:"relays"`
-	Serial            int         `json:"serial"`
-	Temperature       float32     `json:"temperature"`
-	Tmp               Temperature `json:"tmp"`
-	Time              string      `json:"time"`
-	Unixtime          int         `json:"unixtime"`
-	Update            Update      `json:"update"`
-	Uptime            int         `json:"uptime"`
-	Wifi              Wifi        `json:"wifi_sta"`
+	ActionStats       shelly.ActionStats `json:"action_stats"`
+	ConfigChangeCount int                `json:"cfg_change_count"`
+	Cloud             shelly.Cloud       `json:"cloud"`
+	FsFree            int                `json:"fs_free"`
+	FsSize            int                `json:"fs_size"`
+	HasUpdate         bool               `json:"has_update"`
+	Mac               string             `json:"mac"`
+	Meters            []shelly.Meter     `json:"meters"`
+	Mqtt              shelly.Mqtt        `json:"mqtt"`
+	OverTemperature   bool               `json:"overtemperature"`
+	RamFree           int                `json:"ram_free"`
+	RamTotal          int                `json:"ram_total"`
+	Relays            []shelly.Relay     `json:"relays"`
+	Serial            int                `json:"serial"`
+	Temperature       float32            `json:"temperature"`
+	Tmp               shelly.Temperature `json:"tmp"`
+	Time              string             `json:"time"`
+	Unixtime          int                `json:"unixtime"`
+	Update            shelly.Update      `json:"update"`
+	Uptime            int                `json:"uptime"`
+	Wifi              shelly.Wifi        `json:"wifi_sta"`
 }
 
 func (p PlugS) Name() string {
 	return p.settings.Device.Hostname
 }
 
-func (p *PlugS) refreshSettings() error {
+func (p *PlugS) RefreshDeviceinfo() error {
 	settingsUrl := p.baseUrl.JoinPath("settings")
-	resp, err := request(settingsUrl, &p.auth)
+	resp, err := shelly.Request(settingsUrl, &p.auth)
 	if err != nil {
 		return err
 	}
@@ -84,7 +88,7 @@ func (p *PlugS) refreshSettings() error {
 
 func (p *PlugS) Refresh() error {
 	statusUrl := p.baseUrl.JoinPath("status")
-	resp, err := request(statusUrl, &p.auth)
+	resp, err := shelly.Request(statusUrl, &p.auth)
 	if err != nil {
 		return err
 	}
@@ -101,7 +105,7 @@ func (p *PlugS) Collectors() ([]prometheus.Collector, error) {
 	bool2int := map[bool]int8{false: 0, true: 1}
 
 	constLabels := prometheus.Labels{
-		"type":     "SHPLG-S",
+		"type":     TypeString,
 		"serial":   strconv.Itoa(p.status.Serial),
 		"name":     p.settings.Name,
 		"hostname": p.settings.Device.Hostname,
