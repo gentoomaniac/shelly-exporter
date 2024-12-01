@@ -1,92 +1,37 @@
-# Template go Repository
+# shelly-exporter
 
 ## tl;dr
 
-This is a template go repository with actions already set up to create compiled releases
+This project is a prometheus exporter targeting shelly devices to collect metrics from them and providing them to prometheus
 
-## What does this Template provide?
+While this project started as a mainly focused on Shelly Plug S devices, the codebase turned out generic enough to be easily extended.
 
-* a basic cli application with subcommands based on [Kong](https://github.com/alecthomas/kong)
-* logging using zerolog
-* some customisations like a more descriptive version info
-* GitHub workflow to run tests on every push
-* GitHub Workflow to build binary releases with [goreleaser](https://github.com/goreleaser/goreleaser)
+Currently it also contains support for the [Homewizard P1](https://www.homewizard.com/p1-meter/)
 
-## What is missing?
+## Configuration
 
-* A sample for a spinner using [spinner](https://github.com/briandowns/spinner)
-* some sample code for a cli interactive selection dialogue using [promptui](https://github.com/manifoldco/promptui)
+See [config.yaml](config.yaml) for some config examples.
 
-## How to use this template
+The configuration file supports environment variables for `username`, `password` and `frequency` similar to bash variables: `${env:VARIABLE_NAME:-default_value}` but only as the only value of a field. Mixed usage of variables and strings are currently not supported.
 
-### Fetch the project
+### Supported devices
 
-```bash
-git clone https://github.com/gentoomaniac/go-template.git ./
-rm -r .git
+* SHPLG-S - Shelly Plug S (Tested only with the old dual color non bluetooth variant)
+* HWE-P1 - [Homewizard P1](https://www.homewizard.com/p1-meter/)
+
+### Planned suppport
+
+* [Shelly Pro 3EM](https://www.shelly.com/products/shelly-pro-3em-x1)
+* [Shelly Plus H&T](https://www.shelly.com/products/shelly-plus-h-t)
+* [Shelly H&T](https://www.shelly.com/products/shelly-h-t-white)
+* [Shelly FLood](https://www.shelly.com/products/shelly-flood)
+
+## How to run
+
+``` bash
+docker run -v "$(pwd)/config.yaml:/config.yaml" ghcr.io/gentoomaniac/shelly-exporter:latest --config-file /config.yaml -vv
 ```
 
-### update all references to the template
+## Planned features
 
-```
-# goreleaser IDs and binary names
-sed 's/template-application/my-new-application/g' .goreleaser.yaml
-
-# go.mod
-sed 's#gentoomaniac/go-template#githubuser/reponame#g' go.mod
-```
-
-### check in the code
-
-```
-git init
-git add -A
-git commit -m 'import template'
-```
-
-## How to build locally
-
-```
-goreleaser build --single-target --snapshot
-```
-
-## Example runs
-
-### help
-
-```
-> template-application --help
-Usage: template-application <command>
-
-Flags:
-  -h, --help             Show context-sensitive help.
-  -v, --verbosity=INT    Increase verbosity.
-  -q, --quiet            Do not run upgrades.
-      --json             Log as json
-      --debug            shortcut for -vvvv
-
-Commands:
-  foo
-    FooBar command
-
-Run "template-application <command> --help" for more information on a command.
-```
-
-### logging
-
-```
-> template-application -vvv
-8:40PM INF Default command
-```
-
-```
-> template-application -vvv --json foo
-{"level":"info","time":"2021-11-05T20:41:33+01:00","message":"foo command"}
-```
-
-### version
-
-```
-template-application -V
-template-application commit:bf9d771 release:snapshot build:workflow/1 date:2021-11-05T19:58:00Z goVersion:go1.17.2 platform:linux/amd64
-```
+I'm currently working on a webhook that allows Shelly sensors to send their current measurements to the exporter.
