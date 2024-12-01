@@ -25,8 +25,8 @@ var (
 		HWE_P1:  homewizard_v1.TypeString,
 	}
 	stringType = map[string]Type{
-		"SHPLG-S": SHPLG_S,
-		"HWE-P1":  HWE_P1,
+		shelly_plugs.TypeString:  SHPLG_S,
+		homewizard_v1.TypeString: HWE_P1,
 	}
 )
 
