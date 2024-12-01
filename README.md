@@ -35,3 +35,20 @@ docker run -v "$(pwd)/config.yaml:/config.yaml" ghcr.io/gentoomaniac/shelly-expo
 ## Planned features
 
 I'm currently working on a webhook that allows Shelly sensors to send their current measurements to the exporter.
+
+## How to extend the exporter
+
+* add a new package to the codebase implementing the `Device` interface:
+
+```go
+type Device interface {
+	Collectors() ([]prometheus.Collector, error)
+	Name() string
+	Refresh() error
+	RefreshDeviceinfo() error
+}
+```
+
+* add the device type to the [`config package`](https://github.com/gentoomaniac/shelly-exporter/blob/69c63f8b3b413b9e60ab968e17a687fdbafcc849/pkg/config/config.go#L15-L31)
+
+* add the instantiation code to the exporter [setup function](https://github.com/gentoomaniac/shelly-exporter/blob/69c63f8b3b413b9e60ab968e17a687fdbafcc849/pkg/exporter/exporter.go#L115-L126)
