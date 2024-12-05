@@ -1,9 +1,7 @@
 package exporter
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"time"
 
@@ -34,11 +32,14 @@ type Device interface {
 type Exporter struct {
 	config  *config.Config
 	devices []Device
+
+	webhookCollectors map[string]prometheus.Gauge
 }
 
 func New(c *config.Config) *Exporter {
 	return &Exporter{
-		config: c,
+		config:            c,
+		webhookCollectors: make(map[string]prometheus.Gauge),
 	}
 }
 
@@ -74,23 +75,6 @@ func (e *Exporter) Run() {
 	http.Handle("/metrics", promhttp.Handler())
 	http.HandleFunc("/webhook", e.webhookHandler)
 	http.ListenAndServe(":8080", nil)
-}
-
-func (e *Exporter) webhookHandler(w http.ResponseWriter, r *http.Request) {
-	webhookCounter.Inc()
-
-	bodyBytes, err := io.ReadAll(r.Body)
-	if err != nil {
-		log.Error().Err(err).Msg("failed reading body")
-	}
-
-	var body interface{}
-	err = json.Unmarshal(bodyBytes, &body)
-	if err != nil {
-		log.Info().Str("remoteAddr", r.RemoteAddr).Str("uri", r.RequestURI).Any("headers", r.Header).Str("body", string(bodyBytes)).Msg("")
-	} else {
-		log.Info().Str("remoteAddr", r.RemoteAddr).Str("uri", r.RequestURI).Any("headers", r.Header).Any("body", body).Msg("")
-	}
 }
 
 func (e *Exporter) setupDevices() (err error) {
