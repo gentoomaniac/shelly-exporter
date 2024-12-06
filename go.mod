@@ -4,6 +4,7 @@ go 1.22
 
 require (
 	github.com/alecthomas/kong v1.5.1
+	github.com/mongodb-forks/digest v1.1.0
 	github.com/prometheus/client_golang v1.20.5
 	github.com/rs/zerolog v1.33.0
 	gopkg.in/yaml.v2 v2.4.0

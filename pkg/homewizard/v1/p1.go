@@ -13,10 +13,10 @@ const TypeString = "HWE-P1"
 
 func NewP1(c Config) (*Homewizard, error) {
 	if c.BaseUrl == nil {
-		if c.IP == nil {
+		if c.Ip == nil {
 			return nil, fmt.Errorf("must provide at least one of `Baseurl` or `IP`")
 		}
-		c.BaseUrl, _ = url.Parse(fmt.Sprintf("http://%s/", c.IP.String()))
+		c.BaseUrl, _ = url.Parse(fmt.Sprintf("http://%s/", c.Ip.String()))
 	}
 	h := &Homewizard{
 		config:     c,
@@ -33,7 +33,7 @@ func NewP1(c Config) (*Homewizard, error) {
 type Config struct {
 	BaseUrl *url.URL
 	Labels  map[string]string
-	IP      net.IP
+	Ip      net.IP
 }
 
 type Homewizard struct {

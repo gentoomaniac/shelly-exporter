@@ -1,4 +1,4 @@
-package shelly
+package plugs
 
 import (
 	"encoding/json"

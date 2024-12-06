@@ -12,7 +12,9 @@ import (
 
 	"github.com/gentoomaniac/shelly-exporter/pkg/config"
 	homewizard_v1 "github.com/gentoomaniac/shelly-exporter/pkg/homewizard/v1"
-	plugs "github.com/gentoomaniac/shelly-exporter/pkg/shelly/plugs"
+	"github.com/gentoomaniac/shelly-exporter/pkg/shelly"
+	shelly_plugs "github.com/gentoomaniac/shelly-exporter/pkg/shelly/plugs"
+	shelly_pro3em "github.com/gentoomaniac/shelly-exporter/pkg/shelly/pro3em"
 )
 
 var webhookCounter = prometheus.NewCounter(prometheus.CounterOpts{
@@ -98,11 +100,16 @@ func (e *Exporter) setupDevices() (err error) {
 
 		switch dev.Type {
 		case config.SHPLG_S:
-			exporterDev, err = plugs.NewPlugS(dev.IP, string(user), string(password), dev.Labels)
+			exporterDev, err = shelly_plugs.NewPlugS(dev.IP, string(user), string(password), dev.Labels)
+
+		case config.SHPRO3EM:
+			exporterDev, err = shelly_pro3em.NewPro3EM(
+				shelly_pro3em.Config{Ip: dev.IP, Auth: shelly.Auth{User: string(user), Password: string(password)}, Labels: dev.Labels},
+			)
 
 		case config.HWE_P1:
 			exporterDev, err = homewizard_v1.NewP1(
-				homewizard_v1.Config{IP: dev.IP, Labels: dev.Labels},
+				homewizard_v1.Config{Ip: dev.IP, Labels: dev.Labels},
 			)
 
 		default:

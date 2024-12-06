@@ -8,12 +8,14 @@ import (
 
 	homewizard_v1 "github.com/gentoomaniac/shelly-exporter/pkg/homewizard/v1"
 	shelly_plugs "github.com/gentoomaniac/shelly-exporter/pkg/shelly/plugs"
+	shelly_pro3em "github.com/gentoomaniac/shelly-exporter/pkg/shelly/pro3em"
 	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v2"
 )
 
 const (
 	SHPLG_S Type = iota
+	SHPRO3EM
 	HWE_P1
 )
 
@@ -21,11 +23,13 @@ type Type uint8
 
 var (
 	typeString = map[Type]string{
-		SHPLG_S: shelly_plugs.TypeString,
-		HWE_P1:  homewizard_v1.TypeString,
+		SHPLG_S:  shelly_plugs.TypeString,
+		SHPRO3EM: shelly_pro3em.TypeString,
+		HWE_P1:   homewizard_v1.TypeString,
 	}
 	stringType = map[string]Type{
 		shelly_plugs.TypeString:  SHPLG_S,
+		shelly_pro3em.TypeString: SHPRO3EM,
 		homewizard_v1.TypeString: HWE_P1,
 	}
 )

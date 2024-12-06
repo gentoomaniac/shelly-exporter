@@ -17,6 +17,14 @@ devices:
   password: "${env:SHELLY_PASSWORD}"
   labels:
     room: living room
+
 - type: "HWE-P1"
   ip: "10.1.3.182"
+
+- type: "SHPRO3EM"
+  ip: "10.1.3.127"
+  user: admin
+  password: "${env:SHELLY_PASSWORD}"
+  labels:
+    room: living room
 
