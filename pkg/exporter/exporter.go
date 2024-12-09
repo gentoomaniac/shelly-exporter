@@ -13,6 +13,7 @@ import (
 	"github.com/gentoomaniac/shelly-exporter/pkg/config"
 	homewizard_v1 "github.com/gentoomaniac/shelly-exporter/pkg/homewizard/v1"
 	"github.com/gentoomaniac/shelly-exporter/pkg/shelly"
+	shelly_minipm3g "github.com/gentoomaniac/shelly-exporter/pkg/shelly/minipmg3"
 	shelly_plugs "github.com/gentoomaniac/shelly-exporter/pkg/shelly/plugs"
 	shelly_pro3em "github.com/gentoomaniac/shelly-exporter/pkg/shelly/pro3em"
 )
@@ -101,6 +102,11 @@ func (e *Exporter) setupDevices() (err error) {
 		switch dev.Type {
 		case config.SHPLG_S:
 			exporterDev, err = shelly_plugs.NewPlugS(dev.IP, string(user), string(password), dev.Labels)
+
+		case config.SHMINIPMG3:
+			exporterDev, err = shelly_minipm3g.NewMiniPMG3(
+				shelly_minipm3g.Config{Ip: dev.IP, Auth: shelly.Auth{User: string(user), Password: string(password)}, Labels: dev.Labels},
+			)
 
 		case config.SHPRO3EM:
 			exporterDev, err = shelly_pro3em.NewPro3EM(

@@ -119,7 +119,7 @@ func (p *PlugS) Collectors() ([]prometheus.Collector, error) {
 	p.collectors["power_current"] = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
 		Namespace:   "shelly",
 		Name:        "power_current",
-		Help:        "Current real AC power being drawn, in Watts",
+		Help:        "Current real AC power being drawn, [W]",
 		ConstLabels: constLabels,
 	},
 		func() float64 { return float64(p.status.Meters[0].Power) },

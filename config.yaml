@@ -28,3 +28,10 @@ devices:
   labels:
     room: living room
 
+- type: "SHMINIPMG3"
+  ip: "10.1.3.187"
+  user: admin
+  password: "${env:SHELLY_PASSWORD}"
+  labels:
+    room: kitchen
+
