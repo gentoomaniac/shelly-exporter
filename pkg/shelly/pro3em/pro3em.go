@@ -134,6 +134,23 @@ func (p *Pro3EM) Collectors() ([]prometheus.Collector, error) {
 		func() float64 { return float64(p.statusData.Em0.CActPower) },
 	)
 
+	p.collectors["total_act"] = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+		Namespace:   "shelly",
+		Name:        "total_act",
+		Help:        "Total energy, [Wh]",
+		ConstLabels: constLabels,
+	},
+		func() float64 { return float64(p.statusData.Emdata0.TotalAct) },
+	)
+	p.collectors["total_act_ret"] = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+		Namespace:   "shelly",
+		Name:        "total_act_ret",
+		Help:        "Total energy returned, [Wh]",
+		ConstLabels: constLabels,
+	},
+		func() float64 { return float64(p.statusData.Emdata0.TotalActRet) },
+	)
+
 	var c []prometheus.Collector
 	for _, v := range p.collectors {
 		c = append(c, v)
