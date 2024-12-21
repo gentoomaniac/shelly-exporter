@@ -77,6 +77,7 @@ func (e *Exporter) Run() {
 	log.Info().Msg("Starting server on port 8080")
 	http.Handle("/metrics", promhttp.Handler())
 	http.HandleFunc("/webhook", e.webhookHandler)
+	http.HandleFunc("/legacywebhook/", e.legacyWebhookHandler)
 	http.ListenAndServe(":8080", nil)
 }
 
