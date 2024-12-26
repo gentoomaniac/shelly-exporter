@@ -14,27 +14,68 @@ See [config.yaml](config.yaml) for some config examples.
 
 The configuration file supports environment variables for `username`, `password` and `frequency` similar to bash variables: `${env:VARIABLE_NAME:-default_value}` but only as the only value of a field. Mixed usage of variables and strings are currently not supported.
 
-### Supported devices
+### Supported Devices
+
+Not all metrics are generated right yet but the base support for the listed devices is available
+
+#### Direct Query
 
 * SHPLG-S - Shelly Plug S (Tested only with the old dual color non bluetooth variant)
 * HWE-P1 - [Homewizard P1](https://www.homewizard.com/p1-meter/)
+* [Shelly Pro 3EM](https://www.shelly.com/products/shelly-pro-3em-x1)
+
+#### Webhook
+
+The below devices are mostly in a sleep state and because of that can't be querried reliably.
+
+The exporter offers webhooks for these that can be configured in the devices to retrieve the sensor data once the device wakes up.
+
+* [Shelly Plus H&T](https://www.shelly.com/products/shelly-plus-h-t)
+* WIP: [Shelly H&T](https://www.shelly.com/products/shelly-h-t-white)
 
 ### Planned suppport
 
-* [Shelly Pro 3EM](https://www.shelly.com/products/shelly-pro-3em-x1)
-* [Shelly Plus H&T](https://www.shelly.com/products/shelly-plus-h-t)
-* [Shelly H&T](https://www.shelly.com/products/shelly-h-t-white)
 * [Shelly FLood](https://www.shelly.com/products/shelly-flood)
 
 ## How to run
 
+### Configuration
+
+#### Devices with API
+
+TODO: config example
+
+#### Webhook
+
+TODO: Shelly Plus H&T
+
+You can send arbitrary data to the exporter to allow for sleep state devices to send their data.
+
+The URL is constructed like this, some [mandatory tags](https://github.com/gentoomaniac/shelly-exporter/blob/dbdcdcf266652e45f9bd85b1009ebbb22e45102d/pkg/exporter/webhook.go#L14) have to be specified for the exporter to function properly
+
+```
+https://exporter/webhook?tag=value&tag2=value2&metric=<metric_name>&value=<value>
+```
+
+example:
+
+```
+https://<exporter>:<port>/webhook?building=main&room=bedroom&type=PLUSHT&name=PlusHT%20GH%20Downstairs&deviceid=08B61FCEA4BC&namespace=shelly&metric=ambient_temperature_celsius&value=${ev.tC}
+```
+
+#### Legacy Webhook
+
+TODO: Shelly H&T
+
+``` bash
+http://127.0.0.1:8080/legacywebhook/location=test/label=value/
+```
+
+### Run the exporter
+
 ``` bash
 docker run -v "$(pwd)/config.yaml:/config.yaml" ghcr.io/gentoomaniac/shelly-exporter:latest --config-file /config.yaml -vv
 ```
-
-## Planned features
-
-I'm currently working on a webhook that allows Shelly sensors to send their current measurements to the exporter.
 
 ## How to extend the exporter
 
