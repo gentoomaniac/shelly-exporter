@@ -8,23 +8,17 @@ While this project started as a mainly focused on Shelly Plug S devices, the cod
 
 Currently it also contains support for the [Homewizard P1](https://www.homewizard.com/p1-meter/)
 
-## Configuration
-
-See [config.yaml](config.yaml) for some config examples.
-
-The configuration file supports environment variables for `username`, `password` and `frequency` similar to bash variables: `${env:VARIABLE_NAME:-default_value}` but only as the only value of a field. Mixed usage of variables and strings are currently not supported.
-
 ### Supported Devices
 
 Not all metrics are generated right yet but the base support for the listed devices is available
 
-#### Direct Query
+#### Pull based
 
 * SHPLG-S - Shelly Plug S (Tested only with the old dual color non bluetooth variant)
 * HWE-P1 - [Homewizard P1](https://www.homewizard.com/p1-meter/)
 * [Shelly Pro 3EM](https://www.shelly.com/products/shelly-pro-3em-x1)
 
-#### Webhook
+#### Push based
 
 The below devices are mostly in a sleep state and because of that can't be querried reliably.
 
@@ -41,13 +35,15 @@ The exporter offers webhooks for these that can be configured in the devices to 
 
 ### Configuration
 
+See [config.yaml](config.yaml) for some config examples.
+
+The configuration file supports environment variables for `username`, `password` and `frequency` similar to bash variables: `${env:VARIABLE_NAME:-default_value}` but only as the only value of a field. Mixed usage of variables and strings are currently not supported.
+
 #### Devices with API
 
 TODO: config example
 
 #### Webhook
-
-TODO: Shelly Plus H&T
 
 You can send arbitrary data to the exporter to allow for sleep state devices to send their data.
 
@@ -65,10 +61,21 @@ https://<exporter>:<port>/webhook?building=main&room=bedroom&type=PLUSHT&name=Pl
 
 #### Legacy Webhook
 
-TODO: Shelly H&T
+This webhook is for old shelly devices that have a fixed list of parameters they send.
+
+Below is an example of the path you cna configure to pass on arbitrary labels.
 
 ``` bash
-http://127.0.0.1:8080/legacywebhook/location=test/label=value/
+http://127.0.0.1:8080/legacywebhook/location=test/label=fizz/label2=buzz/
+# will cause a call like
+http://127.0.0.1:8080/legacywebhook/location=test/label=fizz/label2/buzz/?hum=40.0&temp=22.1&id=afsefa
+```
+
+the resulting metrics will look like this
+
+```
+shelly_humidity{deviceId="afsefa",ip="::1",lable="fizz",lable2="buzz",type="SHHT-1",userAgent="Shelly/20230913-112531/v1.14.0-gcb84623 (SHHT-1)"} 40
+shelly_temperature{deviceId="afsefa",ip="::1",lable="fizz",lable2="buzz",type="SHHT-1",userAgent="Shelly/20230913-112531/v1.14.0-gcb84623 (SHHT-1)"} 22.1
 ```
 
 ### Run the exporter
@@ -83,10 +90,10 @@ docker run -v "$(pwd)/config.yaml:/config.yaml" ghcr.io/gentoomaniac/shelly-expo
 
 ```go
 type Device interface {
-	Collectors() ([]prometheus.Collector, error)
-	Name() string
-	Refresh() error
-	RefreshDeviceinfo() error
+    Collectors() ([]prometheus.Collector, error)
+    Name() string
+    Refresh() error
+    RefreshDeviceinfo() error
 }
 ```
 

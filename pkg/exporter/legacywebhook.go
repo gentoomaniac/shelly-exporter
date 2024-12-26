@@ -15,10 +15,11 @@ import (
 const legacyWebhookPath = "legacywebhook"
 
 var (
-	// /webhook/legacy/adu/some,other,tag/?hum=38&temp=28.00&id=shellyht-21C4B6
-	pathCleanupRe = regexp.MustCompile(fmt.Sprintf("^\\/?%s\\/(.*)(\\/\\?)+.*$", legacyWebhookPath))
+	// /legacywebhook/adu/some,other,tag/?hum=38&temp=28.00&id=shellyht-21C4B6
+	pathCleanupRe = regexp.MustCompile(fmt.Sprintf("^\\/?%s\\/(.*)\\/?\\?.*$", legacyWebhookPath))
+
 	// Shelly/20230913-112531/v1.14.0-gcb84623 (SHHT-1)
-	userAgnetRe = regexp.MustCompile("^Shelly\\/(\\d{8}-\\d{6})\\/(v\\d+\\.\\d+\\.\\d+-\\w+) \\((.*)\\)$")
+	userAgentRe = regexp.MustCompile(`(?i)^Shelly\/(\d{8}-\d{6})\/(v\d+\.\d+\.\d+-\w+) \((.*)\)`)
 )
 
 func (e *Exporter) legacyWebhookHandler(w http.ResponseWriter, r *http.Request) {
@@ -45,36 +46,41 @@ func (e *Exporter) legacyWebhookHandler(w http.ResponseWriter, r *http.Request) 
 		log.Error().Err(err).Msg("faild parsing temperature from URL")
 	}
 	deviceId := strings.TrimSpace(r.URL.Query().Get("id"))
+	if deviceId == "" {
+		log.Logger.Warn().Str("source", ip).Msg("deviceId missing on legacywebhook call")
+	}
 
 	labels := make(map[string]string)
 	pathSegment := pathCleanupRe.ReplaceAll([]byte(r.URL.String()), []byte("$1"))
 
-	for _, segment := range strings.Split(string(pathSegment), "=") {
-		kv := strings.Split(segment, "/")
+	for _, segment := range strings.Split(string(pathSegment), "/") {
+		kv := strings.Split(segment, "=")
 		if len(kv) == 2 {
 			labels[kv[0]] = kv[1]
 		} else {
 			log.Error().Str("segment", segment).Msg("invalid key/value pair in url")
 		}
-
 	}
+
+	// userAgentRe := regexp.MustCompile(`(?i)^Shelly\\/(\\d{8}-\\d{6})\\/(v\\d+\\.\\d+\\.\\d+-\\w+) \\((.*)\\)$`)
+	deviceType := string(userAgentRe.ReplaceAll([]byte(r.Header.Get("User-Agent")), []byte("$3")))
 
 	constLabels := prometheus.Labels{
 		"userAgent": r.Header.Get("user-agent"),
 		"ip":        ip,
+		"deviceId":  deviceId,
+		"type":      deviceType,
 	}
 	for k, v := range labels {
 		constLabels[k] = v
 	}
 
-	deviceType := string(userAgnetRe.ReplaceAll([]byte(r.Header.Get("User-Agent")), []byte("$3")))
-
-	err = e.updateCollector(deviceType, deviceId, "temperature", temp, labels)
+	err = e.updateCollector(deviceType, deviceId, "temperature", temp, constLabels)
 	if err != nil {
 		log.Error().Err(err).Msg("failed registering new metric")
 		log.Error().Str("remoteAddr", r.RemoteAddr).Str("sourceIp", r.Header.Get("X-Forwarded-For")).Str("uri", r.RequestURI).Str("userAgent", r.Header.Get("User-Agent")).Msg("")
 	}
-	err = e.updateCollector(deviceType, deviceId, "humidity", hum, labels)
+	err = e.updateCollector(deviceType, deviceId, "humidity", hum, constLabels)
 	if err != nil {
 		log.Error().Err(err).Msg("failed registering new metric")
 		log.Error().Str("remoteAddr", r.RemoteAddr).Str("sourceIp", r.Header.Get("X-Forwarded-For")).Str("uri", r.RequestURI).Str("userAgent", r.Header.Get("User-Agent")).Msg("")
@@ -100,7 +106,6 @@ func (e *Exporter) updateCollector(deviceType string, deviceId string, metric st
 		log.Debug().Str("id", deviceId).Str("type", deviceType).Str("monitorName", monName).Msg("new collector registered")
 	}
 	mon.Set(value)
-	log.Debug().Str("id", deviceId).Str("type", deviceType).Msg("value updated")
 
 	return nil
 }
