@@ -124,7 +124,7 @@ func (e *Exporter) setupDevices() (err error) {
 		}
 
 		if err != nil {
-			return fmt.Errorf("failed creating device for ip %s: %w", dev.IP, err)
+			log.Error().Err(err).Str("ip", dev.IP.String()).Msgf("failed creating device")
 		}
 
 		e.devices = append(e.devices, exporterDev)
