@@ -87,7 +87,7 @@ func (m *MiniPMG3) Refresh() error {
 }
 
 func (m *MiniPMG3) Collectors() ([]prometheus.Collector, error) {
-	// bool2int := map[bool]int8{false: 0, true: 1}
+	bool2int := map[bool]int8{false: 0, true: 1}
 
 	constLabels := prometheus.Labels{
 		"type":     TypeString,
@@ -117,6 +117,70 @@ func (m *MiniPMG3) Collectors() ([]prometheus.Collector, error) {
 		ConstLabels: constLabels,
 	},
 		func() float64 { return float64(m.statusData.Pm10.Apower) },
+	)
+
+	// System
+	m.collectors["uptime"] = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+		Namespace:   "shelly",
+		Name:        "uptime",
+		Help:        "device uptime",
+		ConstLabels: constLabels,
+	},
+		func() float64 { return float64(m.statusData.Sys.Uptime) },
+	)
+
+	m.collectors["memory_total"] = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+		Namespace:   "shelly",
+		Name:        "memory_total",
+		Help:        "total device memory",
+		ConstLabels: constLabels,
+	},
+		func() float64 { return float64(m.statusData.Sys.RAMSize) },
+	)
+
+	m.collectors["memory_free"] = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+		Namespace:   "shelly",
+		Name:        "memory_free",
+		Help:        "free device memory",
+		ConstLabels: constLabels,
+	},
+		func() float64 { return float64(m.statusData.Sys.RAMFree) },
+	)
+
+	m.collectors["fs_total"] = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+		Namespace:   "shelly",
+		Name:        "fs_total",
+		Help:        "total filesystem size",
+		ConstLabels: constLabels,
+	},
+		func() float64 { return float64(m.statusData.Sys.FsSize) },
+	)
+
+	m.collectors["fs_free"] = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+		Namespace:   "shelly",
+		Name:        "fs_free",
+		Help:        "free filesystem size",
+		ConstLabels: constLabels,
+	},
+		func() float64 { return float64(m.statusData.Sys.FsFree) },
+	)
+
+	m.collectors["has_update"] = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+		Namespace:   "shelly",
+		Name:        "has_update",
+		Help:        "device update available",
+		ConstLabels: constLabels,
+	},
+		func() float64 { return float64(bool2int[m.statusData.Sys.AvailableUpdates.Stable.Version != ""]) },
+	)
+
+	m.collectors["has_beta_update"] = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+		Namespace:   "shelly",
+		Name:        "has_beta_update",
+		Help:        "device beta version available",
+		ConstLabels: constLabels,
+	},
+		func() float64 { return float64(bool2int[m.statusData.Sys.AvailableUpdates.Beta.Version != ""]) },
 	)
 
 	var c []prometheus.Collector

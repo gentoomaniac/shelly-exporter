@@ -29,21 +29,28 @@ type Status struct {
 		} `json:"ret_aenergy"`
 	} `json:"pm1:0"`
 	Sys struct {
-		Mac              string   `json:"mac"`
-		RestartRequired  bool     `json:"restart_required"`
-		Time             string   `json:"time"`
-		Unixtime         int      `json:"unixtime"`
-		Uptime           int      `json:"uptime"`
-		RAMSize          int      `json:"ram_size"`
-		RAMFree          int      `json:"ram_free"`
-		FsSize           int      `json:"fs_size"`
-		FsFree           int      `json:"fs_free"`
-		CfgRev           int      `json:"cfg_rev"`
-		KvsRev           int      `json:"kvs_rev"`
-		ScheduleRev      int      `json:"schedule_rev"`
-		WebhookRev       int      `json:"webhook_rev"`
-		AvailableUpdates struct{} `json:"available_updates"`
-		ResetReason      int      `json:"reset_reason"`
+		Mac              string `json:"mac"`
+		RestartRequired  bool   `json:"restart_required"`
+		Time             string `json:"time"`
+		Unixtime         int    `json:"unixtime"`
+		Uptime           int    `json:"uptime"`
+		RAMSize          int    `json:"ram_size"`
+		RAMFree          int    `json:"ram_free"`
+		FsSize           int    `json:"fs_size"`
+		FsFree           int    `json:"fs_free"`
+		CfgRev           int    `json:"cfg_rev"`
+		KvsRev           int    `json:"kvs_rev"`
+		ScheduleRev      int    `json:"schedule_rev"`
+		WebhookRev       int    `json:"webhook_rev"`
+		AvailableUpdates struct {
+			Beta struct {
+				Version string `json:"version"`
+			} `json:"beta"`
+			Stable struct {
+				Version string `json:"version"`
+			} `json:"stable"`
+		} `json:"available_updates"`
+		ResetReason int `json:"reset_reason"`
 	} `json:"sys"`
 	Wifi struct {
 		StaIP  string `json:"sta_ip"`
