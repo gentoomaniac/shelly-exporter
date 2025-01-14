@@ -110,9 +110,9 @@ func (m *MiniPMG3) Collectors() ([]prometheus.Collector, error) {
 		func() float64 { return float64(m.statusData.Pm10.Apower) },
 	)
 
-	m.collectors["power_total"] = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+	m.collectors["total_energy"] = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
 		Namespace:   "shelly",
-		Name:        "power_total",
+		Name:        "total_energy",
 		Help:        "Last counter value of the total energy consumed in Watt-hours",
 		ConstLabels: constLabels,
 	},
