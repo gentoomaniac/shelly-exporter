@@ -116,7 +116,7 @@ func (m *MiniPMG3) Collectors() ([]prometheus.Collector, error) {
 		Help:        "Last counter value of the total energy consumed in Watt-hours",
 		ConstLabels: constLabels,
 	},
-		func() float64 { return float64(m.statusData.Pm10.Apower) },
+		func() float64 { return float64(m.statusData.Pm10.Aenergy.Total) },
 	)
 
 	// System
