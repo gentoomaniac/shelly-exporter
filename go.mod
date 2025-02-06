@@ -1,6 +1,6 @@
 module github.com/gentoomaniac/shelly-exporter
 
-go 1.22
+go 1.23
 
 require (
 	github.com/alecthomas/kong v1.7.0

@@ -9,6 +9,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/gentoomaniac/shelly-exporter/pkg/collector"
 	"github.com/gentoomaniac/shelly-exporter/pkg/shelly"
 	"github.com/gentoomaniac/shelly-exporter/pkg/shelly/minipmg3/api"
 )
@@ -94,97 +95,114 @@ func (m *MiniPMG3) Collectors() ([]prometheus.Collector, error) {
 	bool2int := map[bool]int8{false: 0, true: 1}
 
 	constLabels := prometheus.Labels{
-		"type":     TypeString,
-		"serial":   m.configData.Sys.Device.Mac,
-		"name":     m.configData.Sys.Device.Name,
-		"hostname": m.Hostname(),
+		"type":   TypeString,
+		"serial": m.configData.Sys.Device.Mac,
 	}
+	dynamicLabels := []string{"name", "hostname"}
 
 	for k, v := range m.config.Labels {
 		constLabels[k] = v
 	}
 
 	// Power
-	m.collectors["power_current"] = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-		Namespace:   "shelly",
-		Name:        "power_current",
-		Help:        "Current real AC power being drawn, [W]",
-		ConstLabels: constLabels,
+	m.collectors["power_current"] = collector.NewDynamicLabelGaugeCollector(collector.DynamicLabelGaugeCollectorOpts{
+		Namespace:     "shelly",
+		Name:          "power_current",
+		Help:          "Current real AC power being drawn, [W]",
+		DynamicLabels: dynamicLabels,
+		ConstLabels:   constLabels,
 	},
 		func() float64 { return float64(m.statusData.Pm10.Apower) },
+		func() []string { return []string{m.configData.Sys.Device.Name, m.Hostname()} },
 	)
 
-	m.collectors["total_energy"] = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-		Namespace:   "shelly",
-		Name:        "total_energy",
-		Help:        "Last counter value of the total energy consumed in Watt-hours",
-		ConstLabels: constLabels,
+	m.collectors["total_energy"] = collector.NewDynamicLabelGaugeCollector(collector.DynamicLabelGaugeCollectorOpts{
+		Namespace:     "shelly",
+		Name:          "total_energy",
+		Help:          "Last counter value of the total energy consumed in Watt-hours",
+		DynamicLabels: dynamicLabels,
+		ConstLabels:   constLabels,
 	},
 		func() float64 { return float64(m.statusData.Pm10.Aenergy.Total) },
+		func() []string { return []string{m.configData.Sys.Device.Name, m.Hostname()} },
 	)
 
 	// System
-	m.collectors["uptime"] = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-		Namespace:   "shelly",
-		Name:        "uptime",
-		Help:        "device uptime",
-		ConstLabels: constLabels,
+	m.collectors["uptime"] = collector.NewDynamicLabelGaugeCollector(collector.DynamicLabelGaugeCollectorOpts{
+		Namespace:     "shelly",
+		Name:          "uptime",
+		Help:          "device uptime",
+		DynamicLabels: dynamicLabels,
+		ConstLabels:   constLabels,
 	},
 		func() float64 { return float64(m.statusData.Sys.Uptime) },
+		func() []string { return []string{m.configData.Sys.Device.Name, m.Hostname()} },
 	)
 
-	m.collectors["memory_total"] = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-		Namespace:   "shelly",
-		Name:        "memory_total",
-		Help:        "total device memory",
-		ConstLabels: constLabels,
+	m.collectors["memory_total"] = collector.NewDynamicLabelGaugeCollector(collector.DynamicLabelGaugeCollectorOpts{
+		Namespace:     "shelly",
+		Name:          "memory_total",
+		Help:          "total device memory",
+		DynamicLabels: dynamicLabels,
+		ConstLabels:   constLabels,
 	},
 		func() float64 { return float64(m.statusData.Sys.RAMSize) },
+		func() []string { return []string{m.configData.Sys.Device.Name, m.Hostname()} },
 	)
 
-	m.collectors["memory_free"] = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-		Namespace:   "shelly",
-		Name:        "memory_free",
-		Help:        "free device memory",
-		ConstLabels: constLabels,
+	m.collectors["memory_free"] = collector.NewDynamicLabelGaugeCollector(collector.DynamicLabelGaugeCollectorOpts{
+		Namespace:     "shelly",
+		Name:          "memory_free",
+		Help:          "free device memory",
+		DynamicLabels: dynamicLabels,
+		ConstLabels:   constLabels,
 	},
 		func() float64 { return float64(m.statusData.Sys.RAMFree) },
+		func() []string { return []string{m.configData.Sys.Device.Name, m.Hostname()} },
 	)
 
-	m.collectors["fs_total"] = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-		Namespace:   "shelly",
-		Name:        "fs_total",
-		Help:        "total filesystem size",
-		ConstLabels: constLabels,
+	m.collectors["fs_total"] = collector.NewDynamicLabelGaugeCollector(collector.DynamicLabelGaugeCollectorOpts{
+		Namespace:     "shelly",
+		Name:          "fs_total",
+		Help:          "total filesystem size",
+		DynamicLabels: dynamicLabels,
+		ConstLabels:   constLabels,
 	},
 		func() float64 { return float64(m.statusData.Sys.FsSize) },
+		func() []string { return []string{m.configData.Sys.Device.Name, m.Hostname()} },
 	)
 
-	m.collectors["fs_free"] = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-		Namespace:   "shelly",
-		Name:        "fs_free",
-		Help:        "free filesystem size",
-		ConstLabels: constLabels,
+	m.collectors["fs_free"] = collector.NewDynamicLabelGaugeCollector(collector.DynamicLabelGaugeCollectorOpts{
+		Namespace:     "shelly",
+		Name:          "fs_free",
+		Help:          "free filesystem size",
+		DynamicLabels: dynamicLabels,
+		ConstLabels:   constLabels,
 	},
 		func() float64 { return float64(m.statusData.Sys.FsFree) },
+		func() []string { return []string{m.configData.Sys.Device.Name, m.Hostname()} },
 	)
 
-	m.collectors["has_update"] = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-		Namespace:   "shelly",
-		Name:        "has_update",
-		Help:        "device update available",
-		ConstLabels: constLabels,
+	m.collectors["has_update"] = collector.NewDynamicLabelGaugeCollector(collector.DynamicLabelGaugeCollectorOpts{
+		Namespace:     "shelly",
+		Name:          "has_update",
+		Help:          "device update available",
+		DynamicLabels: dynamicLabels,
+		ConstLabels:   constLabels,
 	},
 		func() float64 { return float64(bool2int[m.statusData.Sys.AvailableUpdates.Stable.Version != ""]) },
+		func() []string { return []string{m.configData.Sys.Device.Name, m.Hostname()} },
 	)
 
-	m.collectors["has_beta_update"] = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-		Namespace:   "shelly",
-		Name:        "has_beta_update",
-		Help:        "device beta version available",
-		ConstLabels: constLabels,
+	m.collectors["has_beta_update"] = collector.NewDynamicLabelGaugeCollector(collector.DynamicLabelGaugeCollectorOpts{
+		Namespace:     "shelly",
+		Name:          "has_beta_update",
+		Help:          "device beta version available",
+		DynamicLabels: dynamicLabels,
+		ConstLabels:   constLabels,
 	},
 		func() float64 { return float64(bool2int[m.statusData.Sys.AvailableUpdates.Beta.Version != ""]) },
+		func() []string { return []string{m.configData.Sys.Device.Name, m.Hostname()} },
 	)
 
 	var c []prometheus.Collector
