@@ -18,6 +18,11 @@ import (
 	shelly_pro3em "github.com/gentoomaniac/shelly-exporter/pkg/shelly/pro3em"
 )
 
+const (
+	metadataRefreshInterval   = time.Minute * 5
+	sensordataRefreshInterval = time.Second * 5
+)
+
 var webhookCounter = prometheus.NewCounter(prometheus.CounterOpts{
 	Namespace: "shellyexporter",
 	Name:      "webhook_calls",
@@ -27,14 +32,16 @@ var webhookCounter = prometheus.NewCounter(prometheus.CounterOpts{
 
 type Device interface {
 	Collectors() ([]prometheus.Collector, error)
+	Hostname() string
 	Name() string
 	Refresh() error
 	RefreshDeviceinfo() error
 }
 
 type Exporter struct {
-	config  *config.Config
-	devices []Device
+	config     *config.Config
+	devices    []Device
+	collectors map[string][]prometheus.Collector
 
 	webhookCollectors map[string]prometheus.Gauge
 }
@@ -42,18 +49,49 @@ type Exporter struct {
 func New(c *config.Config) *Exporter {
 	return &Exporter{
 		config:            c,
+		collectors:        make(map[string][]prometheus.Collector),
 		webhookCollectors: make(map[string]prometheus.Gauge),
 	}
 }
 
-func updateDevice(s Device) {
+func (e *Exporter) updateDevice(d Device) {
+	lastMetadataUpdate := time.Now().UTC()
 	for {
-		err := s.Refresh()
+		err := d.Refresh()
 		if err != nil {
-			log.Error().Err(err).Str("device", s.Name()).Msg("refresh failed")
+			log.Error().Err(err).Str("device", d.Hostname()).Msg("refresh failed")
 		}
-		log.Debug().Str("device", s.Name()).Msg("refreshed")
-		time.Sleep(5 * time.Second)
+		log.Debug().Str("device", d.Hostname()).Msg("refreshed")
+
+		if time.Now().UTC().Sub(lastMetadataUpdate) > metadataRefreshInterval {
+			oldName := d.Name()
+			oldHostname := d.Hostname()
+
+			err := d.RefreshDeviceinfo()
+			if err != nil {
+				log.Error().Err(err).Str("device", d.Hostname()).Msg("deviceinfo refresh failed")
+			}
+
+			// TODO: This doesn't work and leaves behind an orphaned metric in the exporter
+			// for reference:
+			// https://stackoverflow.com/a/77900920
+			if d.Name() != oldName || d.Hostname() != oldHostname {
+				collectors, err := d.Collectors()
+				if err != nil {
+					log.Error().Err(err).Msg("failed registering collectors")
+				}
+
+				for _, c := range e.collectors[d.Name()] {
+					prometheus.Unregister(c)
+				}
+				prometheus.MustRegister(collectors...)
+				log.Debug().Str("device", d.Hostname()).Msg("collectors refreshed")
+			}
+			lastMetadataUpdate = time.Now().UTC()
+			log.Debug().Str("device", d.Hostname()).Msg("deviceinfo refreshed")
+		}
+
+		time.Sleep(sensordataRefreshInterval)
 	}
 }
 
@@ -62,14 +100,15 @@ func (e *Exporter) Run() {
 		log.Fatal().Err(err).Msg("")
 	}
 
+	var err error
 	for _, dev := range e.devices {
-		collectors, err := dev.Collectors()
+		e.collectors[dev.Name()], err = dev.Collectors()
 		if err != nil {
 			log.Error().Err(err).Msg("failed registering collectors")
 		}
 
-		prometheus.MustRegister(collectors...)
-		go updateDevice(dev)
+		prometheus.MustRegister(e.collectors[dev.Name()]...)
+		go e.updateDevice(dev)
 	}
 	prometheus.MustRegister(webhookCounter)
 

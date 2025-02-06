@@ -56,6 +56,10 @@ func (p Pro3EM) Name() string {
 	return p.configData.Sys.Device.Name
 }
 
+func (p Pro3EM) Hostname() string {
+	return fmt.Sprintf("shellypro3em-%s", strings.ToLower(p.configData.Sys.Device.Mac))
+}
+
 func (p *Pro3EM) RefreshDeviceinfo() error {
 	settingsUrl := p.config.BaseUrl.JoinPath("Shelly.GetConfig")
 	resp, err := shelly.DigestAuthedRequest(settingsUrl, &p.config.Auth, map[string]string{"id": "0"})
@@ -93,7 +97,7 @@ func (p *Pro3EM) Collectors() ([]prometheus.Collector, error) {
 		"type":     TypeString,
 		"serial":   p.configData.Sys.Device.Mac,
 		"name":     p.configData.Sys.Device.Name,
-		"hostname": fmt.Sprintf("shellypro3em-%s", strings.ToLower(p.configData.Sys.Device.Mac)),
+		"hostname": p.Hostname(),
 	}
 
 	for k, v := range p.config.Labels {
