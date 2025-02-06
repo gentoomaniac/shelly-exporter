@@ -30,6 +30,7 @@ The exporter offers webhooks for these that can be configured in the devices to 
 ### Planned suppport
 
 * [Shelly FLood](https://www.shelly.com/products/shelly-flood)
+* ShellyBLU devices
 
 ## How to run
 
