@@ -16,7 +16,7 @@ type DynamicLabelGaugeCollectorOpts struct {
 
 func NewDynamicLabelGaugeCollector(opts DynamicLabelGaugeCollectorOpts, valueFunc func() float64, labelValueFunc func() []string) *DynamicLabelGaugeCollector {
 	desc := prometheus.NewDesc(
-		fmt.Sprintf("%s:%s:gauge", opts.Namespace, opts.Name),
+		fmt.Sprintf("%s_%s", opts.Namespace, opts.Name),
 		opts.Help,
 		opts.DynamicLabels,
 		opts.ConstLabels,
