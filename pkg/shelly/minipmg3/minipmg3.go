@@ -56,6 +56,10 @@ func (m MiniPMG3) Name() string {
 	return m.configData.Sys.Device.Name
 }
 
+func (m MiniPMG3) Hostname() string {
+	return fmt.Sprintf("shellyminipmg3-%s", strings.ToLower(m.configData.Sys.Device.Mac))
+}
+
 func (m *MiniPMG3) RefreshDeviceinfo() error {
 	settingsUrl := m.config.BaseUrl.JoinPath("Shelly.GetConfig")
 	resp, err := shelly.DigestAuthedRequest(settingsUrl, &m.config.Auth, map[string]string{"id": "0"})
@@ -93,7 +97,7 @@ func (m *MiniPMG3) Collectors() ([]prometheus.Collector, error) {
 		"type":     TypeString,
 		"serial":   m.configData.Sys.Device.Mac,
 		"name":     m.configData.Sys.Device.Name,
-		"hostname": fmt.Sprintf("shellyminipmg3-%s", strings.ToLower(m.configData.Sys.Device.Mac)),
+		"hostname": m.Hostname(),
 	}
 
 	for k, v := range m.config.Labels {

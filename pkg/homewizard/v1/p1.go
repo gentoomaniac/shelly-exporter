@@ -49,6 +49,10 @@ func (h Homewizard) Name() string {
 	return h.info.ProductName
 }
 
+func (h Homewizard) Hostname() string {
+	return h.Name()
+}
+
 func (h *Homewizard) RefreshDeviceinfo() error {
 	infoUrl := h.config.BaseUrl.JoinPath(infoEndpoint)
 	resp, err := request(infoUrl)

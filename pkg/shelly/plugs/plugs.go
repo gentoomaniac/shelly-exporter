@@ -68,6 +68,10 @@ type Status struct {
 }
 
 func (p PlugS) Name() string {
+	return p.settings.Name
+}
+
+func (p PlugS) Hostname() string {
 	return p.settings.Device.Hostname
 }
 
