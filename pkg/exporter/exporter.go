@@ -64,29 +64,12 @@ func (e *Exporter) updateDevice(d Device) {
 		log.Debug().Str("device", d.Hostname()).Msg("refreshed")
 
 		if time.Now().UTC().Sub(lastMetadataUpdate) > metadataRefreshInterval {
-			oldName := d.Name()
-			oldHostname := d.Hostname()
 
 			err := d.RefreshDeviceinfo()
 			if err != nil {
 				log.Error().Err(err).Str("device", d.Hostname()).Msg("deviceinfo refresh failed")
 			}
 
-			// TODO: This doesn't work and leaves behind an orphaned metric in the exporter
-			// for reference:
-			// https://stackoverflow.com/a/77900920
-			if d.Name() != oldName || d.Hostname() != oldHostname {
-				collectors, err := d.Collectors()
-				if err != nil {
-					log.Error().Err(err).Msg("failed registering collectors")
-				}
-
-				for _, c := range e.collectors[d.Name()] {
-					prometheus.Unregister(c)
-				}
-				prometheus.MustRegister(collectors...)
-				log.Debug().Str("device", d.Hostname()).Msg("collectors refreshed")
-			}
 			lastMetadataUpdate = time.Now().UTC()
 			log.Debug().Str("device", d.Hostname()).Msg("deviceinfo refreshed")
 		}

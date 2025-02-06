@@ -9,6 +9,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/gentoomaniac/shelly-exporter/pkg/collector"
 	"github.com/gentoomaniac/shelly-exporter/pkg/shelly"
 )
 
@@ -109,107 +110,126 @@ func (p *PlugS) Collectors() ([]prometheus.Collector, error) {
 	bool2int := map[bool]int8{false: 0, true: 1}
 
 	constLabels := prometheus.Labels{
-		"type":     TypeString,
-		"serial":   strconv.Itoa(p.status.Serial),
-		"name":     p.settings.Name,
-		"hostname": p.settings.Device.Hostname,
+		"type":   TypeString,
+		"serial": strconv.Itoa(p.status.Serial),
 	}
+	dynamicLabels := []string{"name", "hostname"}
 
 	for k, v := range p.labels {
 		constLabels[k] = v
 	}
 
 	// Power
-	p.collectors["power_current"] = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-		Namespace:   "shelly",
-		Name:        "power_current",
-		Help:        "Current real AC power being drawn, [W]",
-		ConstLabels: constLabels,
+	p.collectors["power_current"] = collector.NewDynamicLabelGaugeCollector(collector.DynamicLabelGaugeCollectorOpts{
+		Namespace:     "shelly",
+		Name:          "power_current",
+		Help:          "Current real AC power being drawn, [W]",
+		DynamicLabels: dynamicLabels,
+		ConstLabels:   constLabels,
 	},
 		func() float64 { return float64(p.status.Meters[0].Power) },
+		func() []string { return []string{p.settings.Name, p.settings.Device.Hostname} },
 	)
 
-	p.collectors["power_total"] = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-		Namespace:   "shelly",
-		Name:        "power_total",
-		Help:        "Total energy consumed by the attached electrical appliance in Watt-minute",
-		ConstLabels: constLabels,
+	p.collectors["power_total"] = collector.NewDynamicLabelGaugeCollector(collector.DynamicLabelGaugeCollectorOpts{
+		Namespace:     "shelly",
+		Name:          "power_total",
+		Help:          "Total energy consumed by the attached electrical appliance in Watt-minute",
+		DynamicLabels: dynamicLabels,
+		ConstLabels:   constLabels,
 	},
 		func() float64 { return float64(p.status.Meters[0].Total) },
+		func() []string { return []string{p.settings.Name, p.settings.Device.Hostname} },
 	)
 
 	// Temperatures
-	p.collectors["temperature_celsius"] = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-		Namespace:   "shelly",
-		Name:        "temperature_celsius",
-		Help:        "internal device temperature in °C",
-		ConstLabels: constLabels,
+	p.collectors["temperature_celsius"] = collector.NewDynamicLabelGaugeCollector(collector.DynamicLabelGaugeCollectorOpts{
+		Namespace:     "shelly",
+		Name:          "temperature_celsius",
+		Help:          "internal device temperature in °C",
+		DynamicLabels: dynamicLabels,
+		ConstLabels:   constLabels,
 	},
 		func() float64 { return float64(p.status.Tmp.Celsius) },
+		func() []string { return []string{p.settings.Name, p.settings.Device.Hostname} },
 	)
 
-	p.collectors["temperature_fahrenheit"] = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-		Namespace:   "shelly",
-		Name:        "temperature_fahrenheit",
-		Help:        "internal device temperature in °F",
-		ConstLabels: constLabels,
+	p.collectors["temperature_fahrenheit"] = collector.NewDynamicLabelGaugeCollector(collector.DynamicLabelGaugeCollectorOpts{
+		Namespace:     "shelly",
+		Name:          "temperature_fahrenheit",
+		Help:          "internal device temperature in °F",
+		DynamicLabels: dynamicLabels,
+		ConstLabels:   constLabels,
 	},
 		func() float64 { return float64(p.status.Tmp.Fahrenheit) },
+		func() []string { return []string{p.settings.Name, p.settings.Device.Hostname} },
 	)
 
 	// System
-	p.collectors["uptime"] = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-		Namespace:   "shelly",
-		Name:        "uptime",
-		Help:        "device uptime",
-		ConstLabels: constLabels,
+	p.collectors["uptime"] = collector.NewDynamicLabelGaugeCollector(collector.DynamicLabelGaugeCollectorOpts{
+		Namespace:     "shelly",
+		Name:          "uptime",
+		Help:          "device uptime",
+		DynamicLabels: dynamicLabels,
+		ConstLabels:   constLabels,
 	},
 		func() float64 { return float64(p.status.Uptime) },
+		func() []string { return []string{p.settings.Name, p.settings.Device.Hostname} },
 	)
 
-	p.collectors["memory_total"] = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-		Namespace:   "shelly",
-		Name:        "memory_total",
-		Help:        "total device memory",
-		ConstLabels: constLabels,
+	p.collectors["memory_total"] = collector.NewDynamicLabelGaugeCollector(collector.DynamicLabelGaugeCollectorOpts{
+		Namespace:     "shelly",
+		Name:          "memory_total",
+		Help:          "total device memory",
+		DynamicLabels: dynamicLabels,
+		ConstLabels:   constLabels,
 	},
 		func() float64 { return float64(p.status.RamTotal) },
+		func() []string { return []string{p.settings.Name, p.settings.Device.Hostname} },
 	)
 
-	p.collectors["memory_free"] = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-		Namespace:   "shelly",
-		Name:        "memory_free",
-		Help:        "free device memory",
-		ConstLabels: constLabels,
+	p.collectors["memory_free"] = collector.NewDynamicLabelGaugeCollector(collector.DynamicLabelGaugeCollectorOpts{
+		Namespace:     "shelly",
+		Name:          "memory_free",
+		Help:          "free device memory",
+		DynamicLabels: dynamicLabels,
+		ConstLabels:   constLabels,
 	},
 		func() float64 { return float64(p.status.RamFree) },
+		func() []string { return []string{p.settings.Name, p.settings.Device.Hostname} },
 	)
 
-	p.collectors["fs_total"] = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-		Namespace:   "shelly",
-		Name:        "fs_total",
-		Help:        "total filesystem size",
-		ConstLabels: constLabels,
+	p.collectors["fs_total"] = collector.NewDynamicLabelGaugeCollector(collector.DynamicLabelGaugeCollectorOpts{
+		Namespace:     "shelly",
+		Name:          "fs_total",
+		Help:          "total filesystem size",
+		DynamicLabels: dynamicLabels,
+		ConstLabels:   constLabels,
 	},
 		func() float64 { return float64(p.status.FsSize) },
+		func() []string { return []string{p.settings.Name, p.settings.Device.Hostname} },
 	)
 
-	p.collectors["fs_free"] = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-		Namespace:   "shelly",
-		Name:        "fs_free",
-		Help:        "free filesystem size",
-		ConstLabels: constLabels,
+	p.collectors["fs_free"] = collector.NewDynamicLabelGaugeCollector(collector.DynamicLabelGaugeCollectorOpts{
+		Namespace:     "shelly",
+		Name:          "fs_free",
+		Help:          "free filesystem size",
+		DynamicLabels: dynamicLabels,
+		ConstLabels:   constLabels,
 	},
 		func() float64 { return float64(p.status.FsFree) },
+		func() []string { return []string{p.settings.Name, p.settings.Device.Hostname} },
 	)
 
-	p.collectors["has_update"] = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-		Namespace:   "shelly",
-		Name:        "has_update",
-		Help:        "device update available",
-		ConstLabels: constLabels,
+	p.collectors["has_update"] = collector.NewDynamicLabelGaugeCollector(collector.DynamicLabelGaugeCollectorOpts{
+		Namespace:     "shelly",
+		Name:          "has_update",
+		Help:          "device update available",
+		DynamicLabels: dynamicLabels,
+		ConstLabels:   constLabels,
 	},
 		func() float64 { return float64(bool2int[p.status.HasUpdate]) },
+		func() []string { return []string{p.settings.Name, p.settings.Device.Hostname} },
 	)
 
 	var c []prometheus.Collector
