@@ -126,6 +126,17 @@ func (m *MiniPMG3) Collectors() ([]prometheus.Collector, error) {
 		func() float64 { return float64(m.statusData.Pm10.Aenergy.Total) },
 		func() []string { return []string{m.configData.Sys.Device.Name, m.Hostname()} },
 	)
+	// for compatibility in combined graphing with PlugS and others
+	m.collectors["power_total"] = collector.NewDynamicLabelGaugeCollector(collector.DynamicLabelGaugeCollectorOpts{
+		Namespace:     "shelly",
+		Name:          "power_total",
+		Help:          "Total energy consumed by the attached electrical appliance in Watt-minute",
+		DynamicLabels: dynamicLabels,
+		ConstLabels:   constLabels,
+	},
+		func() float64 { return float64(m.statusData.Pm10.Aenergy.Total * 60) },
+		func() []string { return []string{m.configData.Sys.Device.Name, m.Hostname()} },
+	)
 
 	// System
 	m.collectors["uptime"] = collector.NewDynamicLabelGaugeCollector(collector.DynamicLabelGaugeCollectorOpts{

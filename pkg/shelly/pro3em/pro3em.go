@@ -156,6 +156,18 @@ func (p *Pro3EM) Collectors() ([]prometheus.Collector, error) {
 		func() float64 { return float64(p.statusData.Emdata0.TotalAct) },
 		func() []string { return []string{p.configData.Sys.Device.Name, p.Hostname()} },
 	)
+	// for compatibility in combined graphing with PlugS and others
+	p.collectors["power_total"] = collector.NewDynamicLabelGaugeCollector(collector.DynamicLabelGaugeCollectorOpts{
+		Namespace:     "shelly",
+		Name:          "power_total",
+		Help:          "Total energy consumed by the attached electrical appliance in Watt-minute",
+		DynamicLabels: dynamicLabels,
+		ConstLabels:   constLabels,
+	},
+		func() float64 { return float64(p.statusData.Emdata0.TotalAct * 60) },
+		func() []string { return []string{p.configData.Sys.Device.Name, p.Hostname()} },
+	)
+
 	p.collectors["total_act_ret"] = collector.NewDynamicLabelGaugeCollector(collector.DynamicLabelGaugeCollectorOpts{
 		Namespace:     "shelly",
 		Name:          "total_act_ret",
