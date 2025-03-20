@@ -115,6 +115,17 @@ func (p *Pro3EM) Collectors() ([]prometheus.Collector, error) {
 		func() float64 { return float64(p.statusData.Em0.TotalActPower) },
 		func() []string { return []string{p.configData.Sys.Device.Name, p.Hostname()} },
 	)
+	// For compatibility with other devices
+	p.collectors["power_current"] = collector.NewDynamicLabelGaugeCollector(collector.DynamicLabelGaugeCollectorOpts{
+		Namespace:     "shelly",
+		Name:          "power_current",
+		Help:          "Current real AC power being drawn, [W]",
+		DynamicLabels: dynamicLabels,
+		ConstLabels:   constLabels,
+	},
+		func() float64 { return float64(p.statusData.Em0.TotalActPower) },
+		func() []string { return []string{p.configData.Sys.Device.Name, p.Hostname()} },
+	)
 	p.collectors["a_act_power"] = collector.NewDynamicLabelGaugeCollector(collector.DynamicLabelGaugeCollectorOpts{
 		Namespace:     "shelly",
 		Name:          "a_act_power",
