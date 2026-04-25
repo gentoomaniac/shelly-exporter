@@ -37,7 +37,9 @@ func DeviceFromIP(IP *netip.Addr, auth *auth.Auth, labels map[string]string) (Sh
 
 	switch devType {
 	case "OutdoorPlugSG3", "SHPLG-S":
-		return plugs.NewPlugS(IP, auth.User, auth.Password, labels)
+		return plugs.NewPlugS(
+			plugs.Config{Ip: IP, Auth: auth, Labels: labels},
+		)
 
 	case "MiniPMG3":
 		return minipmg3.NewMiniPMG3(
