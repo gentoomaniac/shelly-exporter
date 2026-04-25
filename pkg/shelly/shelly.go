@@ -9,6 +9,7 @@ import (
 
 	"github.com/gentoomaniac/shelly-exporter/pkg/shelly/auth"
 	"github.com/gentoomaniac/shelly-exporter/pkg/shelly/devices/minipmg3"
+	"github.com/gentoomaniac/shelly-exporter/pkg/shelly/devices/outdoorplugsg3"
 	"github.com/gentoomaniac/shelly-exporter/pkg/shelly/devices/plugs"
 	"github.com/gentoomaniac/shelly-exporter/pkg/shelly/devices/pro3em"
 	"github.com/prometheus/client_golang/prometheus"
@@ -36,7 +37,11 @@ func DeviceFromIP(IP *netip.Addr, auth *auth.Auth, labels map[string]string) (Sh
 	}
 
 	switch devType {
-	case "OutdoorPlugSG3", "SHPLG-S":
+	case "OutdoorPlugSG3":
+		return outdoorplugsg3.NewOutdoorPlugSG3(
+			outdoorplugsg3.Config{Ip: IP, Auth: auth, Labels: labels},
+		)
+	case "SHPLG-S":
 		return plugs.NewPlugS(
 			plugs.Config{Ip: IP, Auth: auth, Labels: labels},
 		)
