@@ -7,17 +7,13 @@ import (
 	"regexp"
 
 	homewizard_v1 "github.com/gentoomaniac/shelly-exporter/pkg/homewizard/v1"
-	shelly_minipmg3 "github.com/gentoomaniac/shelly-exporter/pkg/shelly/minipmg3"
-	shelly_plugs "github.com/gentoomaniac/shelly-exporter/pkg/shelly/plugs"
-	shelly_pro3em "github.com/gentoomaniac/shelly-exporter/pkg/shelly/pro3em"
+	"github.com/gentoomaniac/shelly-exporter/pkg/shelly"
 	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v2"
 )
 
 const (
-	SHPLG_S Type = iota
-	SHMINIPMG3
-	SHPRO3EM
+	SHELLY Type = iota
 	HWE_P1
 )
 
@@ -25,16 +21,12 @@ type Type uint8
 
 var (
 	typeString = map[Type]string{
-		SHPLG_S:    shelly_plugs.TypeString,
-		SHMINIPMG3: shelly_pro3em.TypeString,
-		SHPRO3EM:   shelly_pro3em.TypeString,
-		HWE_P1:     homewizard_v1.TypeString,
+		SHELLY: shelly.TypeString,
+		HWE_P1: homewizard_v1.TypeString,
 	}
 	stringType = map[string]Type{
-		shelly_plugs.TypeString:    SHPLG_S,
-		shelly_minipmg3.TypeString: SHMINIPMG3,
-		shelly_pro3em.TypeString:   SHPRO3EM,
-		homewizard_v1.TypeString:   HWE_P1,
+		shelly.TypeString:        SHELLY,
+		homewizard_v1.TypeString: HWE_P1,
 	}
 )
 

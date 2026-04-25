@@ -3,15 +3,16 @@ package minipmg3
 import (
 	"encoding/json"
 	"fmt"
-	"net"
+	"net/netip"
 	"net/url"
 	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/gentoomaniac/shelly-exporter/pkg/collector"
-	"github.com/gentoomaniac/shelly-exporter/pkg/shelly"
-	"github.com/gentoomaniac/shelly-exporter/pkg/shelly/minipmg3/api"
+	"github.com/gentoomaniac/shelly-exporter/pkg/shelly/auth"
+	"github.com/gentoomaniac/shelly-exporter/pkg/shelly/devices/minipmg3/api"
+	"github.com/gentoomaniac/shelly-exporter/pkg/shelly/request"
 )
 
 const TypeString = "SHMINIPMG3"
@@ -19,8 +20,8 @@ const TypeString = "SHMINIPMG3"
 type Config struct {
 	BaseUrl *url.URL
 	Labels  map[string]string
-	Ip      net.IP
-	Auth    shelly.Auth
+	Ip      *netip.Addr
+	Auth    *auth.Auth
 }
 
 func NewMiniPMG3(c Config) (*MiniPMG3, error) {
@@ -63,7 +64,7 @@ func (m MiniPMG3) Hostname() string {
 
 func (m *MiniPMG3) RefreshDeviceinfo() error {
 	settingsUrl := m.config.BaseUrl.JoinPath("Shelly.GetConfig")
-	resp, err := shelly.DigestAuthedRequest(settingsUrl, &m.config.Auth, map[string]string{"id": "0"})
+	resp, err := request.DigestAuthedRequest(settingsUrl, m.config.Auth, map[string]string{"id": "0"})
 	if err != nil {
 		return err
 	}
@@ -78,7 +79,7 @@ func (m *MiniPMG3) RefreshDeviceinfo() error {
 
 func (m *MiniPMG3) Refresh() error {
 	statusUrl := m.config.BaseUrl.JoinPath("Shelly.GetStatus")
-	resp, err := shelly.DigestAuthedRequest(statusUrl, &m.config.Auth, map[string]string{"id": "0"})
+	resp, err := request.DigestAuthedRequest(statusUrl, m.config.Auth, map[string]string{"id": "0"})
 	if err != nil {
 		return err
 	}

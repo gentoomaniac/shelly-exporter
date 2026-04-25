@@ -16,22 +16,22 @@ type Config struct {
 		Server string `json:"server"`
 	} `json:"cloud"`
 	Mqtt struct {
-		Enable        bool        `json:"enable"`
-		Server        interface{} `json:"server"`
-		ClientID      string      `json:"client_id"`
-		User          interface{} `json:"user"`
-		SslCa         interface{} `json:"ssl_ca"`
-		TopicPrefix   string      `json:"topic_prefix"`
-		RPCNtf        bool        `json:"rpc_ntf"`
-		StatusNtf     bool        `json:"status_ntf"`
-		UseClientCert bool        `json:"use_client_cert"`
-		EnableRPC     bool        `json:"enable_rpc"`
-		EnableControl bool        `json:"enable_control"`
+		Enable        bool   `json:"enable"`
+		Server        any    `json:"server"`
+		ClientID      string `json:"client_id"`
+		User          any    `json:"user"`
+		SslCa         any    `json:"ssl_ca"`
+		TopicPrefix   string `json:"topic_prefix"`
+		RPCNtf        bool   `json:"rpc_ntf"`
+		StatusNtf     bool   `json:"status_ntf"`
+		UseClientCert bool   `json:"use_client_cert"`
+		EnableRPC     bool   `json:"enable_rpc"`
+		EnableControl bool   `json:"enable_control"`
 	} `json:"mqtt"`
 	Pm10 struct {
-		ID      int         `json:"id"`
-		Name    interface{} `json:"name"`
-		Reverse bool        `json:"reverse"`
+		ID      int  `json:"id"`
+		Name    any  `json:"name"`
+		Reverse bool `json:"reverse"`
 	} `json:"pm1:0"`
 	Sys struct {
 		Device struct {
@@ -47,8 +47,8 @@ type Config struct {
 			Lon float64 `json:"lon"`
 		} `json:"location"`
 		Debug struct {
-			Level     int         `json:"level"`
-			FileLevel interface{} `json:"file_level"`
+			Level     int `json:"level"`
+			FileLevel any `json:"file_level"`
 			Mqtt      struct {
 				Enable bool `json:"enable"`
 			} `json:"mqtt"`
@@ -56,13 +56,13 @@ type Config struct {
 				Enable bool `json:"enable"`
 			} `json:"websocket"`
 			UDP struct {
-				Addr interface{} `json:"addr"`
+				Addr any `json:"addr"`
 			} `json:"udp"`
 		} `json:"debug"`
 		UIData struct{} `json:"ui_data"`
 		RPCUDP struct {
-			DstAddr    interface{} `json:"dst_addr"`
-			ListenPort interface{} `json:"listen_port"`
+			DstAddr    any `json:"dst_addr"`
+			ListenPort any `json:"listen_port"`
 		} `json:"rpc_udp"`
 		Sntp struct {
 			Server string `json:"server"`
@@ -79,24 +79,24 @@ type Config struct {
 			} `json:"range_extender"`
 		} `json:"ap"`
 		Sta struct {
-			Ssid       string      `json:"ssid"`
-			IsOpen     bool        `json:"is_open"`
-			Enable     bool        `json:"enable"`
-			Ipv4Mode   string      `json:"ipv4mode"`
-			IP         interface{} `json:"ip"`
-			Netmask    interface{} `json:"netmask"`
-			Gw         interface{} `json:"gw"`
-			Nameserver interface{} `json:"nameserver"`
+			Ssid       string `json:"ssid"`
+			IsOpen     bool   `json:"is_open"`
+			Enable     bool   `json:"enable"`
+			Ipv4Mode   string `json:"ipv4mode"`
+			IP         any    `json:"ip"`
+			Netmask    any    `json:"netmask"`
+			Gw         any    `json:"gw"`
+			Nameserver any    `json:"nameserver"`
 		} `json:"sta"`
 		Sta1 struct {
-			Ssid       interface{} `json:"ssid"`
-			IsOpen     bool        `json:"is_open"`
-			Enable     bool        `json:"enable"`
-			Ipv4Mode   string      `json:"ipv4mode"`
-			IP         interface{} `json:"ip"`
-			Netmask    interface{} `json:"netmask"`
-			Gw         interface{} `json:"gw"`
-			Nameserver interface{} `json:"nameserver"`
+			Ssid       any    `json:"ssid"`
+			IsOpen     bool   `json:"is_open"`
+			Enable     bool   `json:"enable"`
+			Ipv4Mode   string `json:"ipv4mode"`
+			IP         any    `json:"ip"`
+			Netmask    any    `json:"netmask"`
+			Gw         any    `json:"gw"`
+			Nameserver any    `json:"nameserver"`
 		} `json:"sta1"`
 		Roam struct {
 			RssiThr  int `json:"rssi_thr"`
@@ -104,8 +104,8 @@ type Config struct {
 		} `json:"roam"`
 	} `json:"wifi"`
 	Ws struct {
-		Enable bool        `json:"enable"`
-		Server interface{} `json:"server"`
-		SslCa  string      `json:"ssl_ca"`
+		Enable bool   `json:"enable"`
+		Server any    `json:"server"`
+		SslCa  string `json:"ssl_ca"`
 	} `json:"ws"`
 }
