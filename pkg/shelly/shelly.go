@@ -1,83 +1,105 @@
 package shelly
 
 import (
-	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
+	"net/netip"
 
-	"github.com/mongodb-forks/digest"
+	"github.com/gentoomaniac/shelly-exporter/pkg/shelly/auth"
+	"github.com/gentoomaniac/shelly-exporter/pkg/shelly/devices/minipmg3"
+	"github.com/gentoomaniac/shelly-exporter/pkg/shelly/devices/plugs"
+	"github.com/gentoomaniac/shelly-exporter/pkg/shelly/devices/pro3em"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
-type Auth struct {
-	User     string
-	Password string
+const TypeString = "SHELLY"
+
+type ShellyDevice interface {
+	Collectors() ([]prometheus.Collector, error)
+	Hostname() string
+	Name() string
+	Refresh() error
+	RefreshDeviceinfo() error
 }
 
-func (a Auth) basicAuth() string {
-	auth := a.User + ":" + a.Password
-	return base64.StdEncoding.EncodeToString([]byte(auth))
-}
-
-func Request(url *url.URL, auth *Auth) ([]byte, error) {
-	client := &http.Client{}
-
-	req, err := http.NewRequest("GET", url.String(), nil)
+func DeviceFromIP(IP *netip.Addr, auth *auth.Auth, labels map[string]string) (ShellyDevice, error) {
+	info, err := getDeviceInfo(IP)
 	if err != nil {
 		return nil, err
 	}
 
-	if auth != nil {
-		req.Header.Add("Authorization", "Basic "+auth.basicAuth())
+	devType := info.Type
+	if devType == "" {
+		devType = info.App
 	}
-	resp, err := client.Do(req)
+
+	switch devType {
+	case "OutdoorPlugSG3", "SHPLG-S":
+		return plugs.NewPlugS(IP, auth.User, auth.Password, labels)
+
+	case "MiniPMG3":
+		return minipmg3.NewMiniPMG3(
+			minipmg3.Config{Ip: IP, Auth: auth, Labels: labels},
+		)
+
+	case "Pro3EM":
+		return pro3em.NewPro3EM(
+			pro3em.Config{Ip: IP, Auth: auth, Labels: labels},
+		)
+	}
+
+	return nil, fmt.Errorf("unknown device: %s", info.ID)
+}
+
+func getDeviceInfo(IP *netip.Addr) (*DeviceInfo, error) {
+	resp, err := http.Get("http://" + IP.String() + "/shelly")
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed requesting device info: %v", err)
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return []byte{}, fmt.Errorf("request to %s returned non 200 code: %d", url.String(), resp.StatusCode)
+		return nil, fmt.Errorf("device info request failed: %v", err)
 	}
 
-	b, err := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed reading request answer: %v", err)
 	}
 
-	return b, err
+	var devInfo DeviceInfo
+	err = json.Unmarshal(body, &devInfo)
+	if err != nil {
+		return nil, fmt.Errorf("failed unmarshalling device info: %v", err)
+	}
+
+	return &devInfo, nil
 }
 
-func DigestAuthedRequest(url *url.URL, auth *Auth, params map[string]string) ([]byte, error) {
-	t := digest.NewTransport(auth.User, auth.Password)
-	client, err := t.Client()
-	if err != nil {
-		return nil, err
-	}
+type DeviceInfo struct {
+	// Common fields
+	Name  string `json:"name,omitempty"`
+	ID    string `json:"id,omitempty"`
+	MAC   string `json:"mac"`
+	Gen   int    `json:"gen,omitempty"` // 0 or missing for Gen 1
+	Model string `json:"model,omitempty"`
+	Ver   string `json:"ver,omitempty"`
+	App   string `json:"app,omitempty"`
 
-	req, err := http.NewRequest("GET", url.String(), nil)
-	if err != nil {
-		return nil, err
-	}
+	// Gen 1 Specific
+	Auth       bool   `json:"auth,omitempty"`
+	Fw         string `json:"fw,omitempty"`
+	NumOutputs int    `json:"num_outputs,omitempty"`
+	NumMeters  int    `json:"num_meters,omitempty"`
+	Type       string `json:"type,omitempty"`
 
-	q := req.URL.Query()
-	for k, v := range params {
-		q.Add(k, v)
-	}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("request to %s returned non 200 code: %d", url.String(), resp.StatusCode)
-	}
-
-	b, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	return b, err
+	// Gen 2/3 Specific
+	AuthEn     bool   `json:"auth_en,omitempty"`
+	AuthDomain string `json:"auth_domain,omitempty"` // use as Realm
+	FwID       string `json:"fw_id,omitempty"`
+	Matter     bool   `json:"matter,omitempty"`
+	Profile    string `json:"profile,omitempty"`
+	Slot       int    `json:"slot,omitempty"`
 }

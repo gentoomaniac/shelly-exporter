@@ -3,15 +3,16 @@ package pro3em
 import (
 	"encoding/json"
 	"fmt"
-	"net"
+	"net/netip"
 	"net/url"
 	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/gentoomaniac/shelly-exporter/pkg/collector"
-	"github.com/gentoomaniac/shelly-exporter/pkg/shelly"
-	"github.com/gentoomaniac/shelly-exporter/pkg/shelly/pro3em/api"
+	"github.com/gentoomaniac/shelly-exporter/pkg/shelly/auth"
+	"github.com/gentoomaniac/shelly-exporter/pkg/shelly/devices/pro3em/api"
+	"github.com/gentoomaniac/shelly-exporter/pkg/shelly/request"
 )
 
 const TypeString = "SHPRO3EM"
@@ -19,8 +20,8 @@ const TypeString = "SHPRO3EM"
 type Config struct {
 	BaseUrl *url.URL
 	Labels  map[string]string
-	Ip      net.IP
-	Auth    shelly.Auth
+	Ip      *netip.Addr
+	Auth    *auth.Auth
 }
 
 func NewPro3EM(c Config) (*Pro3EM, error) {
@@ -63,7 +64,7 @@ func (p Pro3EM) Hostname() string {
 
 func (p *Pro3EM) RefreshDeviceinfo() error {
 	settingsUrl := p.config.BaseUrl.JoinPath("Shelly.GetConfig")
-	resp, err := shelly.DigestAuthedRequest(settingsUrl, &p.config.Auth, map[string]string{"id": "0"})
+	resp, err := request.DigestAuthedRequest(settingsUrl, p.config.Auth, map[string]string{"id": "0"})
 	if err != nil {
 		return err
 	}
@@ -78,7 +79,7 @@ func (p *Pro3EM) RefreshDeviceinfo() error {
 
 func (p *Pro3EM) Refresh() error {
 	statusUrl := p.config.BaseUrl.JoinPath("Shelly.GetStatus")
-	resp, err := shelly.DigestAuthedRequest(statusUrl, &p.config.Auth, map[string]string{"id": "0"})
+	resp, err := request.DigestAuthedRequest(statusUrl, p.config.Auth, map[string]string{"id": "0"})
 	if err != nil {
 		return err
 	}

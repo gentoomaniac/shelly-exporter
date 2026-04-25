@@ -3,24 +3,26 @@ package plugs
 import (
 	"encoding/json"
 	"fmt"
-	"net"
+	"net/netip"
 	"net/url"
 	"strconv"
 
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/gentoomaniac/shelly-exporter/pkg/collector"
-	"github.com/gentoomaniac/shelly-exporter/pkg/shelly"
+	"github.com/gentoomaniac/shelly-exporter/pkg/shelly/auth"
+	"github.com/gentoomaniac/shelly-exporter/pkg/shelly/devices/plugs/api"
+	"github.com/gentoomaniac/shelly-exporter/pkg/shelly/request"
 )
 
 const TypeString = "SHPLG-S"
 
-func NewPlugS(ip net.IP, user string, password string, labels prometheus.Labels) (*PlugS, error) {
+func NewPlugS(ip *netip.Addr, user string, password string, labels prometheus.Labels) (*PlugS, error) {
 	baseUrl, _ := url.Parse(fmt.Sprintf("http://%s/", ip.String()))
 
 	p := &PlugS{
 		baseUrl:    baseUrl,
-		auth:       shelly.Auth{User: user, Password: password},
+		auth:       auth.Auth{User: user, Password: password},
 		labels:     labels,
 		collectors: make(map[string]prometheus.Collector),
 	}
@@ -35,37 +37,13 @@ func NewPlugS(ip net.IP, user string, password string, labels prometheus.Labels)
 
 type PlugS struct {
 	baseUrl *url.URL
-	auth    shelly.Auth
+	auth    auth.Auth
 	labels  prometheus.Labels
 
-	settings shelly.Settings
-	status   Status
+	settings api.Settings
+	status   api.Status
 
 	collectors map[string]prometheus.Collector
-}
-
-type Status struct {
-	ActionStats       shelly.ActionStats `json:"action_stats"`
-	ConfigChangeCount int                `json:"cfg_change_count"`
-	Cloud             shelly.Cloud       `json:"cloud"`
-	FsFree            int                `json:"fs_free"`
-	FsSize            int                `json:"fs_size"`
-	HasUpdate         bool               `json:"has_update"`
-	Mac               string             `json:"mac"`
-	Meters            []shelly.Meter     `json:"meters"`
-	Mqtt              shelly.Mqtt        `json:"mqtt"`
-	OverTemperature   bool               `json:"overtemperature"`
-	RamFree           int                `json:"ram_free"`
-	RamTotal          int                `json:"ram_total"`
-	Relays            []shelly.Relay     `json:"relays"`
-	Serial            int                `json:"serial"`
-	Temperature       float32            `json:"temperature"`
-	Tmp               shelly.Temperature `json:"tmp"`
-	Time              string             `json:"time"`
-	Unixtime          int                `json:"unixtime"`
-	Update            shelly.Update      `json:"update"`
-	Uptime            int                `json:"uptime"`
-	Wifi              shelly.Wifi        `json:"wifi_sta"`
 }
 
 func (p PlugS) Name() string {
@@ -78,7 +56,7 @@ func (p PlugS) Hostname() string {
 
 func (p *PlugS) RefreshDeviceinfo() error {
 	settingsUrl := p.baseUrl.JoinPath("settings")
-	resp, err := shelly.Request(settingsUrl, &p.auth)
+	resp, err := request.Request(settingsUrl, &p.auth)
 	if err != nil {
 		return err
 	}
@@ -93,7 +71,7 @@ func (p *PlugS) RefreshDeviceinfo() error {
 
 func (p *PlugS) Refresh() error {
 	statusUrl := p.baseUrl.JoinPath("status")
-	resp, err := shelly.Request(statusUrl, &p.auth)
+	resp, err := request.Request(statusUrl, &p.auth)
 	if err != nil {
 		return err
 	}

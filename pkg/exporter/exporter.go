@@ -3,6 +3,7 @@ package exporter
 import (
 	"fmt"
 	"net/http"
+	"net/netip"
 	"time"
 
 	"github.com/rs/zerolog/log"
@@ -13,9 +14,7 @@ import (
 	"github.com/gentoomaniac/shelly-exporter/pkg/config"
 	homewizard_v1 "github.com/gentoomaniac/shelly-exporter/pkg/homewizard/v1"
 	"github.com/gentoomaniac/shelly-exporter/pkg/shelly"
-	shelly_minipm3g "github.com/gentoomaniac/shelly-exporter/pkg/shelly/minipmg3"
-	shelly_plugs "github.com/gentoomaniac/shelly-exporter/pkg/shelly/plugs"
-	shelly_pro3em "github.com/gentoomaniac/shelly-exporter/pkg/shelly/pro3em"
+	shelly_auth "github.com/gentoomaniac/shelly-exporter/pkg/shelly/auth"
 )
 
 const (
@@ -82,6 +81,7 @@ func (e *Exporter) Run() {
 	if err := e.setupDevices(); err != nil {
 		log.Fatal().Err(err).Msg("")
 	}
+	log.Debug().Msg("finished setting up devices")
 
 	var err error
 	for _, dev := range e.devices {
@@ -123,18 +123,9 @@ func (e *Exporter) setupDevices() (err error) {
 		dev.Labels["ip"] = dev.IP.String()
 
 		switch dev.Type {
-		case config.SHPLG_S:
-			exporterDev, err = shelly_plugs.NewPlugS(dev.IP, string(user), string(password), dev.Labels)
-
-		case config.SHMINIPMG3:
-			exporterDev, err = shelly_minipm3g.NewMiniPMG3(
-				shelly_minipm3g.Config{Ip: dev.IP, Auth: shelly.Auth{User: string(user), Password: string(password)}, Labels: dev.Labels},
-			)
-
-		case config.SHPRO3EM:
-			exporterDev, err = shelly_pro3em.NewPro3EM(
-				shelly_pro3em.Config{Ip: dev.IP, Auth: shelly.Auth{User: string(user), Password: string(password)}, Labels: dev.Labels},
-			)
+		case config.SHELLY:
+			ip := netip.MustParseAddr(dev.IP.String())
+			exporterDev, err = shelly.DeviceFromIP(&ip, &shelly_auth.Auth{User: string(user), Password: string(password)}, dev.Labels)
 
 		case config.HWE_P1:
 			exporterDev, err = homewizard_v1.NewP1(
