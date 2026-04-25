@@ -17,13 +17,23 @@ import (
 
 const TypeString = "SHPLG-S"
 
-func NewPlugS(ip *netip.Addr, user string, password string, labels prometheus.Labels) (*PlugS, error) {
-	baseUrl, _ := url.Parse(fmt.Sprintf("http://%s/", ip.String()))
+type Config struct {
+	BaseUrl *url.URL
+	Labels  map[string]string
+	Ip      *netip.Addr
+	Auth    *auth.Auth
+}
+
+func NewPlugS(c Config) (*PlugS, error) {
+	if c.BaseUrl == nil {
+		if c.Ip == nil {
+			return nil, fmt.Errorf("must provide at least one of `Baseurl` or `IP`")
+		}
+		c.BaseUrl, _ = url.Parse(fmt.Sprintf("http://%s/", c.Ip.String()))
+	}
 
 	p := &PlugS{
-		baseUrl:    baseUrl,
-		auth:       auth.Auth{User: user, Password: password},
-		labels:     labels,
+		config:     c,
 		collectors: make(map[string]prometheus.Collector),
 	}
 
@@ -36,9 +46,7 @@ func NewPlugS(ip *netip.Addr, user string, password string, labels prometheus.La
 }
 
 type PlugS struct {
-	baseUrl *url.URL
-	auth    auth.Auth
-	labels  prometheus.Labels
+	config Config
 
 	settings api.Settings
 	status   api.Status
@@ -55,8 +63,8 @@ func (p PlugS) Hostname() string {
 }
 
 func (p *PlugS) RefreshDeviceinfo() error {
-	settingsUrl := p.baseUrl.JoinPath("settings")
-	resp, err := request.Request(settingsUrl, &p.auth)
+	settingsUrl := p.config.BaseUrl.JoinPath("settings")
+	resp, err := request.Request(settingsUrl, p.config.Auth)
 	if err != nil {
 		return err
 	}
@@ -70,8 +78,8 @@ func (p *PlugS) RefreshDeviceinfo() error {
 }
 
 func (p *PlugS) Refresh() error {
-	statusUrl := p.baseUrl.JoinPath("status")
-	resp, err := request.Request(statusUrl, &p.auth)
+	statusUrl := p.config.BaseUrl.JoinPath("status")
+	resp, err := request.Request(statusUrl, p.config.Auth)
 	if err != nil {
 		return err
 	}
@@ -93,7 +101,7 @@ func (p *PlugS) Collectors() ([]prometheus.Collector, error) {
 	}
 	dynamicLabels := []string{"name", "hostname"}
 
-	for k, v := range p.labels {
+	for k, v := range p.config.Labels {
 		constLabels[k] = v
 	}
 
