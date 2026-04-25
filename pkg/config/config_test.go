@@ -9,7 +9,7 @@ const (
 devices:
 - name: "shellyplug-s-80646F819FD8"
   alias: "birds"
-  type: "SHPLG-S"
+  type: "SHELLY"
   ip: "10.1.3.117"
   user: "${env:SHELLY_USER:-marco}"
   password: "${env:SHELLY_PASSWORD}"
