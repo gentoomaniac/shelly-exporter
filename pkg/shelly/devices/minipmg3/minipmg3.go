@@ -12,6 +12,7 @@ import (
 
 	"github.com/gentoomaniac/shelly-exporter/pkg/collector"
 	"github.com/gentoomaniac/shelly-exporter/pkg/shelly/auth"
+	"github.com/gentoomaniac/shelly-exporter/pkg/shelly/components"
 	"github.com/gentoomaniac/shelly-exporter/pkg/shelly/devices/minipmg3/api"
 	"github.com/gentoomaniac/shelly-exporter/pkg/shelly/request"
 )
@@ -52,6 +53,8 @@ type MiniPMG3 struct {
 	configData api.Config
 	statusData api.Status
 
+	btHomeComponents components.BTHomeComponents
+
 	collectors map[string]prometheus.Collector
 }
 
@@ -90,6 +93,17 @@ func (m *MiniPMG3) Refresh() error {
 		return err
 	}
 
+	componentsUrl := m.config.BaseUrl.JoinPath("Shelly.GetComponents")
+	resp, err = request.DigestAuthedRequest(componentsUrl, m.config.Auth, map[string]string{"id": "0"})
+	if err != nil {
+		return err
+	}
+
+	m.btHomeComponents, err = components.ParseBTHomeComponents(resp)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -103,6 +117,36 @@ func (m *MiniPMG3) Collectors() ([]prometheus.Collector, error) {
 	dynamicLabels := []string{"name", "hostname"}
 
 	maps.Copy(constLabels, m.config.Labels)
+
+	// BTHome
+	m.collectors["bthome_sensors"] = collector.NewMultiValueGaugeCollector(collector.MultiValueGaugeCollectorOpts{
+		Namespace:     "shelly",
+		Name:          "bthome_sensor",
+		Help:          "BTHome sensor values (temperature, humidity, battery, etc.)",
+		DynamicLabels: []string{"address", "name", "type", "gateway"},
+	}, func() []collector.MetricPoint {
+		var points []collector.MetricPoint
+
+		for addr, device := range m.btHomeComponents {
+			deviceName := "unknown"
+			if device.Config != nil {
+				deviceName = device.Config.Name
+			}
+
+			for _, sensor := range device.Sensors {
+				points = append(points, collector.MetricPoint{
+					Value: sensor.Status.Value,
+					LabelValues: []string{
+						addr,
+						deviceName,
+						sensor.Config.ObjID.String(),
+						m.Hostname(),
+					},
+				})
+			}
+		}
+		return points
+	})
 
 	// Power
 	m.collectors["power_current"] = collector.NewDynamicLabelGaugeCollector(collector.DynamicLabelGaugeCollectorOpts{
