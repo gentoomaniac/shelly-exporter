@@ -32,8 +32,12 @@ func DeviceFromIP(IP *netip.Addr, auth *auth.Auth, labels map[string]string) (Sh
 	}
 
 	devType := info.Type
-	if devType == "" {
+	// Gen 2+ devices have some changes
+	if info.Gen > 0 {
 		devType = info.App
+		if auth != nil {
+			auth.User = "admin"
+		}
 	}
 
 	switch devType {
