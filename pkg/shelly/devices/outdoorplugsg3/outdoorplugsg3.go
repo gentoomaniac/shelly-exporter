@@ -3,6 +3,7 @@ package outdoorplugsg3
 import (
 	"encoding/json"
 	"fmt"
+	"maps"
 	"net/netip"
 	"net/url"
 	"strings"
@@ -104,9 +105,7 @@ func (p *OutdoorPlugSG3) Collectors() ([]prometheus.Collector, error) {
 	}
 	dynamicLabels := []string{"name", "hostname"}
 
-	for k, v := range p.config.Labels {
-		constLabels[k] = v
-	}
+	maps.Copy(constLabels, p.config.Labels)
 
 	// Power
 	p.collectors["power_current"] = collector.NewDynamicLabelGaugeCollector(collector.DynamicLabelGaugeCollectorOpts{

@@ -3,6 +3,7 @@ package minipmg3
 import (
 	"encoding/json"
 	"fmt"
+	"maps"
 	"net/netip"
 	"net/url"
 	"strings"
@@ -101,9 +102,7 @@ func (m *MiniPMG3) Collectors() ([]prometheus.Collector, error) {
 	}
 	dynamicLabels := []string{"name", "hostname"}
 
-	for k, v := range m.config.Labels {
-		constLabels[k] = v
-	}
+	maps.Copy(constLabels, m.config.Labels)
 
 	// Power
 	m.collectors["power_current"] = collector.NewDynamicLabelGaugeCollector(collector.DynamicLabelGaugeCollectorOpts{

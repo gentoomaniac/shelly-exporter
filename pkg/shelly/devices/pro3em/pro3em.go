@@ -3,6 +3,7 @@ package pro3em
 import (
 	"encoding/json"
 	"fmt"
+	"maps"
 	"net/netip"
 	"net/url"
 	"strings"
@@ -101,9 +102,7 @@ func (p *Pro3EM) Collectors() ([]prometheus.Collector, error) {
 	}
 	dynamicLabels := []string{"name", "hostname"}
 
-	for k, v := range p.config.Labels {
-		constLabels[k] = v
-	}
+	maps.Copy(constLabels, p.config.Labels)
 
 	// Power
 	p.collectors["total_active_power"] = collector.NewDynamicLabelGaugeCollector(collector.DynamicLabelGaugeCollectorOpts{
