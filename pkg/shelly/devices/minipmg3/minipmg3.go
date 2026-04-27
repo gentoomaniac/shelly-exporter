@@ -93,13 +93,7 @@ func (m *MiniPMG3) Refresh() error {
 		return err
 	}
 
-	componentsUrl := m.config.BaseUrl.JoinPath("Shelly.GetComponents")
-	resp, err = request.DigestAuthedRequest(componentsUrl, m.config.Auth, map[string]string{"id": "0"})
-	if err != nil {
-		return err
-	}
-
-	m.btHomeComponents, err = components.ParseBTHomeComponents(resp)
+	m.btHomeComponents, err = components.GetBTHomeComponents(m.config.BaseUrl, m.config.Auth)
 	if err != nil {
 		return err
 	}
@@ -120,10 +114,13 @@ func (m *MiniPMG3) Collectors() ([]prometheus.Collector, error) {
 
 	// BTHome
 	m.collectors["bthome_sensors"] = collector.NewMultiValueGaugeCollector(collector.MultiValueGaugeCollectorOpts{
-		Namespace:     "shelly",
-		Name:          "bthome_sensor",
-		Help:          "BTHome sensor values (temperature, humidity, battery, etc.)",
-		DynamicLabels: []string{"address", "name", "type", "gateway"},
+		Namespace: "shelly",
+		Name:      "bthome_sensor",
+		Help:      "BTHome sensor values (temperature, humidity, battery, etc.)",
+		ConstLabels: prometheus.Labels{
+			"gateway": m.Hostname(),
+		},
+		DynamicLabels: []string{"address", "name", "type"},
 	}, func() []collector.MetricPoint {
 		var points []collector.MetricPoint
 
@@ -140,7 +137,6 @@ func (m *MiniPMG3) Collectors() ([]prometheus.Collector, error) {
 						addr,
 						deviceName,
 						sensor.Config.ObjID.String(),
-						m.Hostname(),
 					},
 				})
 			}

@@ -12,6 +12,7 @@ import (
 
 	"github.com/gentoomaniac/shelly-exporter/pkg/collector"
 	"github.com/gentoomaniac/shelly-exporter/pkg/shelly/auth"
+	"github.com/gentoomaniac/shelly-exporter/pkg/shelly/components"
 	"github.com/gentoomaniac/shelly-exporter/pkg/shelly/devices/outdoorplugsg3/api"
 	"github.com/gentoomaniac/shelly-exporter/pkg/shelly/request"
 )
@@ -51,6 +52,8 @@ type OutdoorPlugSG3 struct {
 
 	configData api.Config
 	statusData api.Status
+
+	btHomeComponents components.BTHomeComponents
 
 	collectors map[string]prometheus.Collector
 }
@@ -93,6 +96,11 @@ func (p *OutdoorPlugSG3) Refresh() error {
 		return err
 	}
 
+	p.btHomeComponents, err = components.GetBTHomeComponents(p.config.BaseUrl, p.config.Auth)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -106,6 +114,38 @@ func (p *OutdoorPlugSG3) Collectors() ([]prometheus.Collector, error) {
 	dynamicLabels := []string{"name", "hostname"}
 
 	maps.Copy(constLabels, p.config.Labels)
+
+	// BTHome
+	p.collectors["bthome_sensors"] = collector.NewMultiValueGaugeCollector(collector.MultiValueGaugeCollectorOpts{
+		Namespace: "shelly",
+		Name:      "bthome_sensor",
+		Help:      "BTHome sensor values (temperature, humidity, battery, etc.)",
+		ConstLabels: prometheus.Labels{
+			"gateway": p.Hostname(),
+		},
+		DynamicLabels: []string{"address", "name", "type"},
+	}, func() []collector.MetricPoint {
+		var points []collector.MetricPoint
+
+		for addr, device := range p.btHomeComponents {
+			deviceName := "unknown"
+			if device.Config != nil {
+				deviceName = device.Config.Name
+			}
+
+			for _, sensor := range device.Sensors {
+				points = append(points, collector.MetricPoint{
+					Value: sensor.Status.Value,
+					LabelValues: []string{
+						addr,
+						deviceName,
+						sensor.Config.ObjID.String(),
+					},
+				})
+			}
+		}
+		return points
+	})
 
 	// Power
 	p.collectors["power_current"] = collector.NewDynamicLabelGaugeCollector(collector.DynamicLabelGaugeCollectorOpts{

@@ -48,7 +48,7 @@ func (c *DynamicLabelGaugeCollector) Collect(ch chan<- prometheus.Metric) {
 	ch <- prometheus.MustNewConstMetric(
 		c.description,
 		prometheus.GaugeValue,
-		c.valueFunc(), // value
+		c.valueFunc(),
 		c.dynamicLabelsFunc()...,
 	)
 }
