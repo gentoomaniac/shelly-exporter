@@ -16,7 +16,23 @@ Not all metrics are generated right yet but the base support for the listed devi
 
 * SHPLG-S - Shelly Plug S (Tested only with the old dual color non bluetooth variant)
 * HWE-P1 - [Homewizard P1](https://www.homewizard.com/p1-meter/)
+* [Shelly Outdoor Plug S G3](https://www.shelly.com/products/shelly-outdoor-plug-s-gen3?_pos=3&_fid=6707145e1&_ss=c)
+* [Shelly PM mini G3](https://www.shelly.com/products/shelly-pm-mini-gen3)
 * [Shelly Pro 3EM](https://www.shelly.com/products/shelly-pro-3em-x1)
+
+##### Shelly BLU
+
+The exporter is pulling components data (Shelly.GetComponents) and reports `bthomesensor` datapoints for connected devices.
+
+Example:
+
+```
+# HELP shelly_bthome_sensor BTHome sensor values (temperature, humidity, battery, etc.)
+# TYPE shelly_bthome_sensor gauge
+shelly_bthome_sensor{address="38:39:8f:86:d3:f8",gateway="shellyminipmg3-54320453fc34",name="Shelly BLU H&T Outdoor",type="battery"} 100
+shelly_bthome_sensor{address="38:39:8f:86:d3:f8",gateway="shellyminipmg3-54320453fc34",name="Shelly BLU H&T Outdoor",type="humidity"} 63
+shelly_bthome_sensor{address="38:39:8f:86:d3:f8",gateway="shellyminipmg3-54320453fc34",name="Shelly BLU H&T Outdoor",type="temperature"} 2.8
+```
 
 #### Push based
 
@@ -30,7 +46,6 @@ The exporter offers webhooks for these that can be configured in the devices to 
 ### Planned suppport
 
 * [Shelly FLood](https://www.shelly.com/products/shelly-flood)
-* ShellyBLU devices
 
 ## How to run
 
@@ -101,3 +116,11 @@ type Device interface {
 * add the device type to the [`config package`](https://github.com/gentoomaniac/shelly-exporter/blob/69c63f8b3b413b9e60ab968e17a687fdbafcc849/pkg/config/config.go#L15-L31)
 
 * add the instantiation code to the exporter [setup function](https://github.com/gentoomaniac/shelly-exporter/blob/69c63f8b3b413b9e60ab968e17a687fdbafcc849/pkg/exporter/exporter.go#L115-L126)
+
+## Visualisation
+
+I use grafana for visualisation.
+
+[Here](dashboard.json) is my dashboard as a reference.
+
+![Dashboard screenshot](dashboard.png "my dashboard")
