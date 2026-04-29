@@ -59,8 +59,8 @@ type OutdoorPlugSG3 struct {
 }
 
 func (p OutdoorPlugSG3) Name() string {
-	if p.configData.Switch0.Name != nil {
-		return *p.configData.Switch0.Name
+	if p.configData.Sys.Device.Name != nil {
+		return *p.configData.Sys.Device.Name
 	}
 	return ""
 }
