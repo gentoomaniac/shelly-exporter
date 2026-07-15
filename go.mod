@@ -3,7 +3,7 @@ module github.com/gentoomaniac/shelly-exporter
 go 1.25.0
 
 require (
-	github.com/alecthomas/kong v1.15.0
+	github.com/alecthomas/kong v1.16.0
 	github.com/mongodb-forks/digest v1.1.0
 	github.com/prometheus/client_golang v1.23.2
 	github.com/rs/zerolog v1.35.1
