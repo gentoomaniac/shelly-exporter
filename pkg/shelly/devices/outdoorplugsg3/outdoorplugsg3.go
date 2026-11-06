@@ -159,7 +159,7 @@ func (p *OutdoorPlugSG3) Collectors() ([]prometheus.Collector, error) {
 		func() []string { return []string{p.Name(), p.Hostname()} },
 	)
 
-	p.collectors["total_energy"] = collector.NewDynamicLabelGaugeCollector(collector.DynamicLabelGaugeCollectorOpts{
+	p.collectors["total_energy"] = collector.NewDynamicLabelCounterCollector(collector.DynamicLabelCounterCollectorOpts{
 		Namespace:     "shelly",
 		Name:          "total_energy",
 		Help:          "Last counter value of the total energy consumed in Watt-hours",
@@ -170,7 +170,7 @@ func (p *OutdoorPlugSG3) Collectors() ([]prometheus.Collector, error) {
 		func() []string { return []string{p.Name(), p.Hostname()} },
 	)
 	// for compatibility in combined graphing with PlugS and others
-	p.collectors["power_total"] = collector.NewDynamicLabelGaugeCollector(collector.DynamicLabelGaugeCollectorOpts{
+	p.collectors["power_total"] = collector.NewDynamicLabelCounterCollector(collector.DynamicLabelCounterCollectorOpts{
 		Namespace:     "shelly",
 		Name:          "power_total",
 		Help:          "Total energy consumed by the attached electrical appliance in Watt-minute",
@@ -182,7 +182,7 @@ func (p *OutdoorPlugSG3) Collectors() ([]prometheus.Collector, error) {
 	)
 
 	// System
-	p.collectors["uptime"] = collector.NewDynamicLabelGaugeCollector(collector.DynamicLabelGaugeCollectorOpts{
+	p.collectors["uptime"] = collector.NewDynamicLabelCounterCollector(collector.DynamicLabelCounterCollectorOpts{
 		Namespace:     "shelly",
 		Name:          "uptime",
 		Help:          "device uptime",

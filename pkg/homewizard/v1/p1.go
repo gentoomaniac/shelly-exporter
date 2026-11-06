@@ -127,7 +127,7 @@ func (h *Homewizard) Collectors() ([]prometheus.Collector, error) {
 		func() float64 { return h.data.ActivePowerL1W },
 	)
 
-	h.collectors["total_power_import_kwh"] = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+	h.collectors["total_power_import_kwh"] = prometheus.NewCounterFunc(prometheus.CounterOpts{
 		Namespace:   "homewizard",
 		Name:        "total_power_import_kwh",
 		Help:        "Total imported power in kWh",
@@ -136,7 +136,7 @@ func (h *Homewizard) Collectors() ([]prometheus.Collector, error) {
 		func() float64 { return h.data.TotalPowerImportKwh },
 	)
 
-	h.collectors["total_power_exportt_kwh"] = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+	h.collectors["total_power_exportt_kwh"] = prometheus.NewCounterFunc(prometheus.CounterOpts{
 		Namespace:   "homewizard",
 		Name:        "total_power_export_kwh",
 		Help:        "Total exported power in kWh",

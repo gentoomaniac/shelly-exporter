@@ -197,7 +197,7 @@ func (p *Pro3EM) Collectors() ([]prometheus.Collector, error) {
 		func() []string { return []string{p.configData.Sys.Device.Name, p.Hostname()} },
 	)
 
-	p.collectors["total_act"] = collector.NewDynamicLabelGaugeCollector(collector.DynamicLabelGaugeCollectorOpts{
+	p.collectors["total_act"] = collector.NewDynamicLabelCounterCollector(collector.DynamicLabelCounterCollectorOpts{
 		Namespace:     "shelly",
 		Name:          "total_act",
 		Help:          "Total energy, [Wh]",
@@ -208,7 +208,7 @@ func (p *Pro3EM) Collectors() ([]prometheus.Collector, error) {
 		func() []string { return []string{p.configData.Sys.Device.Name, p.Hostname()} },
 	)
 	// for compatibility in combined graphing with PlugS and others
-	p.collectors["power_total"] = collector.NewDynamicLabelGaugeCollector(collector.DynamicLabelGaugeCollectorOpts{
+	p.collectors["power_total"] = collector.NewDynamicLabelCounterCollector(collector.DynamicLabelCounterCollectorOpts{
 		Namespace:     "shelly",
 		Name:          "power_total",
 		Help:          "Total energy consumed by the attached electrical appliance in Watt-minute",
@@ -219,7 +219,7 @@ func (p *Pro3EM) Collectors() ([]prometheus.Collector, error) {
 		func() []string { return []string{p.configData.Sys.Device.Name, p.Hostname()} },
 	)
 
-	p.collectors["total_act_ret"] = collector.NewDynamicLabelGaugeCollector(collector.DynamicLabelGaugeCollectorOpts{
+	p.collectors["total_act_ret"] = collector.NewDynamicLabelCounterCollector(collector.DynamicLabelCounterCollectorOpts{
 		Namespace:     "shelly",
 		Name:          "total_act_ret",
 		Help:          "Total energy returned, [Wh]",

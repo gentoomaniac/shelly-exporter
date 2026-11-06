@@ -156,7 +156,7 @@ func (m *MiniPMG3) Collectors() ([]prometheus.Collector, error) {
 		func() []string { return []string{m.configData.Sys.Device.Name, m.Hostname()} },
 	)
 
-	m.collectors["total_energy"] = collector.NewDynamicLabelGaugeCollector(collector.DynamicLabelGaugeCollectorOpts{
+	m.collectors["total_energy"] = collector.NewDynamicLabelCounterCollector(collector.DynamicLabelCounterCollectorOpts{
 		Namespace:     "shelly",
 		Name:          "total_energy",
 		Help:          "Last counter value of the total energy consumed in Watt-hours",
@@ -167,7 +167,7 @@ func (m *MiniPMG3) Collectors() ([]prometheus.Collector, error) {
 		func() []string { return []string{m.configData.Sys.Device.Name, m.Hostname()} },
 	)
 	// for compatibility in combined graphing with PlugS and others
-	m.collectors["power_total"] = collector.NewDynamicLabelGaugeCollector(collector.DynamicLabelGaugeCollectorOpts{
+	m.collectors["power_total"] = collector.NewDynamicLabelCounterCollector(collector.DynamicLabelCounterCollectorOpts{
 		Namespace:     "shelly",
 		Name:          "power_total",
 		Help:          "Total energy consumed by the attached electrical appliance in Watt-minute",
@@ -179,7 +179,7 @@ func (m *MiniPMG3) Collectors() ([]prometheus.Collector, error) {
 	)
 
 	// System
-	m.collectors["uptime"] = collector.NewDynamicLabelGaugeCollector(collector.DynamicLabelGaugeCollectorOpts{
+	m.collectors["uptime"] = collector.NewDynamicLabelCounterCollector(collector.DynamicLabelCounterCollectorOpts{
 		Namespace:     "shelly",
 		Name:          "uptime",
 		Help:          "device uptime",
