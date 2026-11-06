@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/netip"
+	"sync/atomic"
 	"time"
 
 	"github.com/rs/zerolog/log"
@@ -55,7 +56,8 @@ func New(c *config.Config) *Exporter {
 // registerCollectors registers the device's collectors with Prometheus.
 // It must only be called once the device holds data that has been read
 // successfully, so that no metric is ever exported with placeholder values.
-func registerCollectors(d Device) error {
+// The collectors only export while online is true.
+func registerCollectors(d Device, online *atomic.Bool) error {
 	collectors, err := d.Collectors()
 	if err != nil {
 		return err
@@ -65,7 +67,7 @@ func registerCollectors(d Device) error {
 		// A previous attempt may have registered some collectors before failing.
 		// Those read the same device state, so skip them and register the rest.
 		var are prometheus.AlreadyRegisteredError
-		if err := prometheus.Register(c); err != nil && !errors.As(err, &are) {
+		if err := prometheus.Register(gatedCollector{Collector: c, online: online}); err != nil && !errors.As(err, &are) {
 			return err
 		}
 	}
@@ -76,20 +78,27 @@ func registerCollectors(d Device) error {
 func (e *Exporter) updateDevice(d Device) {
 	lastMetadataUpdate := time.Now().UTC()
 	registered := false
+	online := &atomic.Bool{}
 	for {
 		err := d.Refresh()
 		if err != nil {
 			log.Error().Err(err).Str("device", d.Hostname()).Msg("refresh failed")
+			// Stop exporting stale values until the device answers again.
+			if online.Swap(false) {
+				log.Warn().Str("device", d.Hostname()).Msg("device offline, metrics withheld")
+			}
 		} else {
 			log.Debug().Str("device", d.Hostname()).Msg("refreshed")
 
 			if !registered {
-				if err := registerCollectors(d); err != nil {
+				if err := registerCollectors(d, online); err != nil {
 					log.Error().Err(err).Str("device", d.Hostname()).Msg("failed registering collectors")
 				} else {
 					registered = true
-					log.Info().Str("device", d.Hostname()).Msg("device initialised, exporting metrics")
 				}
+			}
+			if registered && !online.Swap(true) {
+				log.Info().Str("device", d.Hostname()).Msg("device online, exporting metrics")
 			}
 		}
 
