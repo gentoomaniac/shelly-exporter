@@ -12,6 +12,9 @@ type DynamicLabelGaugeCollectorOpts struct {
 	Help          string
 	DynamicLabels []string
 	ConstLabels   prometheus.Labels
+	// ReadyFunc is optional. When it returns false, Collect emits nothing,
+	// e.g. while the device data has not been read yet.
+	ReadyFunc func() bool
 }
 
 func NewDynamicLabelGaugeCollector(opts DynamicLabelGaugeCollectorOpts, valueFunc func() float64, labelValueFunc func() []string) *DynamicLabelGaugeCollector {
@@ -27,6 +30,7 @@ func NewDynamicLabelGaugeCollector(opts DynamicLabelGaugeCollectorOpts, valueFun
 		dynamicLabels:     opts.DynamicLabels,
 		dynamicLabelsFunc: labelValueFunc,
 		valueFunc:         valueFunc,
+		readyFunc:         opts.ReadyFunc,
 	}
 
 	return c
@@ -38,6 +42,7 @@ type DynamicLabelGaugeCollector struct {
 	dynamicLabelsFunc func() []string
 
 	valueFunc func() float64
+	readyFunc func() bool
 }
 
 func (c *DynamicLabelGaugeCollector) Describe(ch chan<- *prometheus.Desc) {
@@ -45,6 +50,9 @@ func (c *DynamicLabelGaugeCollector) Describe(ch chan<- *prometheus.Desc) {
 }
 
 func (c *DynamicLabelGaugeCollector) Collect(ch chan<- prometheus.Metric) {
+	if c.readyFunc != nil && !c.readyFunc() {
+		return
+	}
 	ch <- prometheus.MustNewConstMetric(
 		c.description,
 		prometheus.GaugeValue,

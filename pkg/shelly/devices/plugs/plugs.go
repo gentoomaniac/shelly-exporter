@@ -104,6 +104,8 @@ func (p *PlugS) Collectors() ([]prometheus.Collector, error) {
 
 	maps.Copy(constLabels, p.config.Labels)
 
+	metersRead := func() bool { return len(p.status.Meters) > 0 }
+
 	// Power
 	p.collectors["power_current"] = collector.NewDynamicLabelGaugeCollector(collector.DynamicLabelGaugeCollectorOpts{
 		Namespace:     "shelly",
@@ -111,6 +113,7 @@ func (p *PlugS) Collectors() ([]prometheus.Collector, error) {
 		Help:          "Current real AC power being drawn, [W]",
 		DynamicLabels: dynamicLabels,
 		ConstLabels:   constLabels,
+		ReadyFunc:     metersRead,
 	},
 		func() float64 { return float64(p.status.Meters[0].Power) },
 		func() []string { return []string{p.settings.Name, p.settings.Device.Hostname} },
@@ -122,6 +125,7 @@ func (p *PlugS) Collectors() ([]prometheus.Collector, error) {
 		Help:          "Total energy consumed by the attached electrical appliance in Watt-minute",
 		DynamicLabels: dynamicLabels,
 		ConstLabels:   constLabels,
+		ReadyFunc:     metersRead,
 	},
 		func() float64 { return float64(p.status.Meters[0].Total) },
 		func() []string { return []string{p.settings.Name, p.settings.Device.Hostname} },

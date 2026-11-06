@@ -116,7 +116,7 @@ func (h *Homewizard) Collectors() ([]prometheus.Collector, error) {
 		Help:        "Current real AC power being drawn on L2, in Watts",
 		ConstLabels: constLabels,
 	},
-		func() float64 { return h.data.ActivePowerL1W },
+		func() float64 { return h.data.ActivePowerL2W },
 	)
 	h.collectors["active_power_l3_w"] = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
 		Namespace:   "homewizard",
@@ -124,7 +124,7 @@ func (h *Homewizard) Collectors() ([]prometheus.Collector, error) {
 		Help:        "Current real AC power being drawn on L3, in Watts",
 		ConstLabels: constLabels,
 	},
-		func() float64 { return h.data.ActivePowerL1W },
+		func() float64 { return h.data.ActivePowerL3W },
 	)
 
 	h.collectors["total_power_import_kwh"] = prometheus.NewCounterFunc(prometheus.CounterOpts{
@@ -136,7 +136,7 @@ func (h *Homewizard) Collectors() ([]prometheus.Collector, error) {
 		func() float64 { return h.data.TotalPowerImportKwh },
 	)
 
-	h.collectors["total_power_exportt_kwh"] = prometheus.NewCounterFunc(prometheus.CounterOpts{
+	h.collectors["total_power_export_kwh"] = prometheus.NewCounterFunc(prometheus.CounterOpts{
 		Namespace:   "homewizard",
 		Name:        "total_power_export_kwh",
 		Help:        "Total exported power in kWh",

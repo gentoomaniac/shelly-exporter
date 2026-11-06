@@ -1,6 +1,7 @@
 package exporter
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"net/netip"
@@ -38,9 +39,8 @@ type Device interface {
 }
 
 type Exporter struct {
-	config     *config.Config
-	devices    []Device
-	collectors map[string][]prometheus.Collector
+	config  *config.Config
+	devices []Device
 
 	webhookCollectors map[string]prometheus.Gauge
 }
@@ -48,19 +48,50 @@ type Exporter struct {
 func New(c *config.Config) *Exporter {
 	return &Exporter{
 		config:            c,
-		collectors:        make(map[string][]prometheus.Collector),
 		webhookCollectors: make(map[string]prometheus.Gauge),
 	}
 }
 
+// registerCollectors registers the device's collectors with Prometheus.
+// It must only be called once the device holds data that has been read
+// successfully, so that no metric is ever exported with placeholder values.
+func registerCollectors(d Device) error {
+	collectors, err := d.Collectors()
+	if err != nil {
+		return err
+	}
+
+	for _, c := range collectors {
+		// A previous attempt may have registered some collectors before failing.
+		// Those read the same device state, so skip them and register the rest.
+		var are prometheus.AlreadyRegisteredError
+		if err := prometheus.Register(c); err != nil && !errors.As(err, &are) {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (e *Exporter) updateDevice(d Device) {
 	lastMetadataUpdate := time.Now().UTC()
+	registered := false
 	for {
 		err := d.Refresh()
 		if err != nil {
 			log.Error().Err(err).Str("device", d.Hostname()).Msg("refresh failed")
+		} else {
+			log.Debug().Str("device", d.Hostname()).Msg("refreshed")
+
+			if !registered {
+				if err := registerCollectors(d); err != nil {
+					log.Error().Err(err).Str("device", d.Hostname()).Msg("failed registering collectors")
+				} else {
+					registered = true
+					log.Info().Str("device", d.Hostname()).Msg("device initialised, exporting metrics")
+				}
+			}
 		}
-		log.Debug().Str("device", d.Hostname()).Msg("refreshed")
 
 		if time.Now().UTC().Sub(lastMetadataUpdate) > metadataRefreshInterval {
 
@@ -83,14 +114,9 @@ func (e *Exporter) Run() {
 	}
 	log.Debug().Msg("finished setting up devices")
 
-	var err error
+	// Collectors are registered by updateDevice after the first successful
+	// refresh, so a device exports nothing until it is initialised.
 	for _, dev := range e.devices {
-		e.collectors[dev.Name()], err = dev.Collectors()
-		if err != nil {
-			log.Error().Err(err).Msg("failed registering collectors")
-		}
-
-		prometheus.MustRegister(e.collectors[dev.Name()]...)
 		go e.updateDevice(dev)
 	}
 	prometheus.MustRegister(webhookCounter)
